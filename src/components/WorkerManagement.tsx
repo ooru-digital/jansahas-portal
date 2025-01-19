@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronRight, Search, Plus, FileUp, History, Trash2, Pencil } from 'lucide-react';
+import { ChevronRight, Search, Plus, FileUp, History, Trash2, Pencil, MapPin } from 'lucide-react';
 import { toast, Toaster } from 'react-hot-toast';
 import * as WorkerAPI from '../api/workers';
 import type { Worker } from '../api/workers';
@@ -75,7 +75,9 @@ export default function WorkerManagement() {
     const searchLower = searchTerm.toLowerCase();
     return (
       (worker.name?.toLowerCase() || '').includes(searchLower) ||
-      (worker.phone_number || '').includes(searchTerm)
+      (worker.phone_number || '').includes(searchTerm) ||
+      (worker.present_address?.toLowerCase() || '').includes(searchLower) ||
+      (worker.permanent_address?.toLowerCase() || '').includes(searchLower)
     );
   });
 
@@ -142,9 +144,8 @@ export default function WorkerManagement() {
                     <thead className="bg-gray-50">
                       <tr>
                         <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                        <th scope="col" className="hidden sm:table-cell px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Site</th>
-                        <th scope="col" className="hidden md:table-cell px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start Date</th>
-                        <th scope="col" className="hidden md:table-cell px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">End Date</th>
+                        <th scope="col" className="hidden md:table-cell px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Present Address</th>
+                        <th scope="col" className="hidden md:table-cell px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Permanent Address</th>
                         <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone Number</th>
                         <th scope="col" className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                       </tr>
@@ -152,18 +153,24 @@ export default function WorkerManagement() {
                     <tbody className="bg-white divide-y divide-gray-200">
                       {filteredWorkers.map((worker) => (
                         <tr key={worker.id} className="hover:bg-gray-50">
-                          <td className="px-3 py-4 whitespace-nowrap">
+                          <td className="px-3 py-4">
                             <div className="text-sm font-medium text-gray-900">{worker.name}</div>
-                            <div className="sm:hidden text-xs text-gray-500 mt-1">Site Name</div>
-                          </td>
-                          <td className="hidden sm:table-cell px-3 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-500">Site Name</div>
+                            <div className="md:hidden mt-1 space-y-1">
+                              <div className="flex items-center text-xs text-gray-500">
+                                <MapPin className="h-3 w-3 mr-1" />
+                                Present: {worker.present_address || 'N/A'}
+                              </div>
+                              <div className="flex items-center text-xs text-gray-500">
+                                <MapPin className="h-3 w-3 mr-1" />
+                                Permanent: {worker.permanent_address || 'N/A'}
+                              </div>
+                            </div>
                           </td>
                           <td className="hidden md:table-cell px-3 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-500">2023-01-01</div>
+                            <div className="text-sm text-gray-500">{worker.present_address || 'N/A'}</div>
                           </td>
                           <td className="hidden md:table-cell px-3 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-500">2023-12-31</div>
+                            <div className="text-sm text-gray-500">{worker.permanent_address || 'N/A'}</div>
                           </td>
                           <td className="px-3 py-4 whitespace-nowrap">
                             <div className="text-sm text-gray-500">{worker.phone_number}</div>
@@ -197,7 +204,7 @@ export default function WorkerManagement() {
                       ))}
                       {filteredWorkers.length === 0 && (
                         <tr>
-                          <td colSpan={6} className="px-3 py-4 text-center text-gray-500">
+                          <td colSpan={5} className="px-3 py-4 text-center text-gray-500">
                             No workers found
                           </td>
                         </tr>
