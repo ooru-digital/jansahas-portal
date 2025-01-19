@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
-import { Lock, Mail, LogIn, Users, Building2 } from 'lucide-react';
+import { Lock, Mail, LogIn, Home, Users, ClipboardCheck, LogOut, Menu, X, CheckSquare } from 'lucide-react';
 import { Toaster, toast } from 'react-hot-toast';
 import * as auth from './api/auth';
 import Dashboard from './components/Dashboard';
 import WorkerManagement from './components/WorkerManagement';
+import Approvals from './components/Approvals';
 
 type UserType = 'jansathi' | 'construction';
-type ActiveView = 'dashboard' | 'workers';
+type ActiveView = 'dashboard' | 'workers' | 'approvals';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('tokens'));
   const [userType, setUserType] = useState<UserType>('jansathi');
   const [activeView, setActiveView] = useState<ActiveView>('dashboard');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -40,55 +42,177 @@ export default function App() {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('tokens');
+    setIsAuthenticated(false);
+  };
+
+  const handleNavigate = (view: ActiveView) => {
+    setActiveView(view);
+    setIsMobileMenuOpen(false);
+  };
+
+  const renderContent = () => {
+    switch (activeView) {
+      case 'dashboard':
+        return <Dashboard onNavigate={handleNavigate} />;
+      case 'workers':
+        return <WorkerManagement />;
+      case 'approvals':
+        return <Approvals />;
+      default:
+        return <Dashboard onNavigate={handleNavigate} />;
+    }
+  };
+
   if (isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <nav className="bg-white shadow-sm">
-          <div className="max-w-7xl mx-auto px-4">
-            <div className="flex justify-between h-16">
-              <div className="flex">
-                <div className="flex-shrink-0 flex items-center">
+      <div className="min-h-screen bg-gray-50 flex">
+        {/* Sidebar for desktop */}
+        <div className="hidden md:flex md:flex-col md:w-64 md:fixed md:inset-y-0 bg-white border-r border-gray-200">
+          <div className="flex flex-col flex-grow pt-5 overflow-y-auto">
+            <div className="flex items-center flex-shrink-0 px-4">
+              <h1 className="text-xl font-bold text-gray-900">Jansahas Portal</h1>
+            </div>
+            <div className="mt-8 flex-grow flex flex-col">
+              <nav className="flex-1 px-2 space-y-1">
+                <button
+                  onClick={() => handleNavigate('dashboard')}
+                  className={`group flex items-center px-4 py-2 text-sm font-medium rounded-md w-full ${
+                    activeView === 'dashboard'
+                      ? 'bg-blue-50 text-blue-600'
+                      : 'text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  <Home className="mr-3 h-5 w-5" />
+                  Dashboard
+                </button>
+                <button
+                  onClick={() => handleNavigate('workers')}
+                  className={`group flex items-center px-4 py-2 text-sm font-medium rounded-md w-full ${
+                    activeView === 'workers'
+                      ? 'bg-blue-50 text-blue-600'
+                      : 'text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  <Users className="mr-3 h-5 w-5" />
+                  Workers
+                </button>
+                <button
+                  onClick={() => handleNavigate('approvals')}
+                  className={`group flex items-center px-4 py-2 text-sm font-medium rounded-md w-full ${
+                    activeView === 'approvals'
+                      ? 'bg-blue-50 text-blue-600'
+                      : 'text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  <CheckSquare className="mr-3 h-5 w-5" />
+                  Approvals
+                </button>
+              </nav>
+            </div>
+            <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
+              <button
+                onClick={handleLogout}
+                className="group flex items-center px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-md w-full"
+              >
+                <LogOut className="mr-3 h-5 w-5" />
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile menu button */}
+        <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
+          <div className="flex items-center justify-between px-4 py-3">
+            <h1 className="text-xl font-bold text-gray-900">Jansahas Portal</h1>
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="text-gray-500 hover:text-gray-600"
+            >
+              {isMobileMenuOpen ? (
+                <X className="h-6 w-6" />
+              ) : (
+                <Menu className="h-6 w-6" />
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile menu */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden fixed inset-0 z-40 bg-black bg-opacity-50">
+            <div className="fixed inset-y-0 left-0 w-64 bg-white">
+              <div className="flex flex-col h-full">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
                   <h1 className="text-xl font-bold text-gray-900">Jansahas Portal</h1>
-                </div>
-                <div className="ml-6 flex space-x-4">
                   <button
-                    onClick={() => setActiveView('dashboard')}
-                    className={`inline-flex items-center px-3 py-2 text-sm font-medium ${
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="text-gray-500 hover:text-gray-600"
+                  >
+                    <X className="h-6 w-6" />
+                  </button>
+                </div>
+                <nav className="flex-1 px-2 py-4 space-y-1">
+                  <button
+                    onClick={() => handleNavigate('dashboard')}
+                    className={`group flex items-center px-4 py-2 text-sm font-medium rounded-md w-full ${
                       activeView === 'dashboard'
-                        ? 'text-blue-600 border-b-2 border-blue-600'
-                        : 'text-gray-500 hover:text-gray-700'
+                        ? 'bg-blue-50 text-blue-600'
+                        : 'text-gray-600 hover:bg-gray-50'
                     }`}
                   >
+                    <Home className="mr-3 h-5 w-5" />
                     Dashboard
                   </button>
                   <button
-                    onClick={() => setActiveView('workers')}
-                    className={`inline-flex items-center px-3 py-2 text-sm font-medium ${
+                    onClick={() => handleNavigate('workers')}
+                    className={`group flex items-center px-4 py-2 text-sm font-medium rounded-md w-full ${
                       activeView === 'workers'
-                        ? 'text-blue-600 border-b-2 border-blue-600'
-                        : 'text-gray-500 hover:text-gray-700'
+                        ? 'bg-blue-50 text-blue-600'
+                        : 'text-gray-600 hover:bg-gray-50'
                     }`}
                   >
+                    <Users className="mr-3 h-5 w-5" />
                     Workers
+                  </button>
+                  <button
+                    onClick={() => handleNavigate('approvals')}
+                    className={`group flex items-center px-4 py-2 text-sm font-medium rounded-md w-full ${
+                      activeView === 'approvals'
+                        ? 'bg-blue-50 text-blue-600'
+                        : 'text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    <CheckSquare className="mr-3 h-5 w-5" />
+                    Approvals
+                  </button>
+                </nav>
+                <div className="flex-shrink-0 border-t border-gray-200 p-4">
+                  <button
+                    onClick={handleLogout}
+                    className="group flex items-center px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-md w-full"
+                  >
+                    <LogOut className="mr-3 h-5 w-5" />
+                    Logout
                   </button>
                 </div>
               </div>
-              <div className="flex items-center">
-                <button
-                  onClick={() => {
-                    localStorage.removeItem('tokens');
-                    setIsAuthenticated(false);
-                  }}
-                  className="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm font-medium"
-                >
-                  Logout
-                </button>
-              </div>
             </div>
           </div>
-        </nav>
+        )}
 
-        {activeView === 'dashboard' ? <Dashboard /> : <WorkerManagement />}
+        {/* Main content */}
+        <div className="md:pl-64 flex flex-col flex-1">
+          <main className="flex-1">
+            <div className="py-6">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+                {renderContent()}
+              </div>
+            </div>
+          </main>
+        </div>
       </div>
     );
   }
@@ -120,7 +244,7 @@ export default function App() {
                     : 'text-gray-600 hover:bg-gray-50'
                 }`}
               >
-                <Building2 className="inline-block mr-2 h-5 w-5" />
+                <ClipboardCheck className="inline-block mr-2 h-5 w-5" />
                 Construction
               </button>
             </div>

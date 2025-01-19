@@ -5,26 +5,26 @@ export interface Worker {
   name: string;
   aadhar_number: string;
   phone_number: string;
-  address: string;
   present_address: string;
   permanent_address: string;
+  organization_id: string;
 }
 
 export interface CreateWorkerData {
   name: string;
   aadhar_number: string;
   phone_number: string;
-  address: string;
   present_address: string;
   permanent_address: string;
+  organization_id: string;
 }
 
 export interface UpdateWorkerData {
   name?: string;
   phone_number?: string;
-  address?: string;
   present_address?: string;
   permanent_address?: string;
+  organization_id?: string;
 }
 
 export const createWorker = async (data: CreateWorkerData): Promise<Worker> => {

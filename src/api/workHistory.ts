@@ -2,14 +2,29 @@ import api from './axiosInstance';
 
 export interface WorkHistory {
   id: number;
-  worker_id: number;
   work_name: string;
   work_type: string;
   location: string;
   start_date: string;
   end_date: string;
-  site_id: string;
-  organization_id: string;
+  status?: string;
+  worker: string;
+  site: string;
+  created_at: string;
+  updated_at: string;
+  isJansathi: boolean;
+  number_of_working_days: number;
+  approved_date?: string;
+  rejected_date?: string;
+}
+
+export interface WorkHistoryResponse {
+  data: WorkHistory[];
+  total_number_of_working_days: number;
+  worker_name: string;
+  present_address: string;
+  permanent_address: string;
+  total_no_of_approved_working_days: number;
 }
 
 export interface CreateWorkHistoryData {
@@ -50,7 +65,7 @@ export const getWorkHistories = async (): Promise<WorkHistory[]> => {
   return response.data;
 };
 
-export const getWorkerWorkHistory = async (workerId: number): Promise<WorkHistory[]> => {
+export const getWorkerWorkHistory = async (workerId: number): Promise<WorkHistoryResponse> => {
   const response = await api.get(`/worker/${workerId}/work-history/`);
   return response.data;
 };

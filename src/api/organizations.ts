@@ -16,7 +16,7 @@ export const getOrganizations = async (): Promise<Organization[]> => {
   return response.data;
 };
 
-export const getSitesByOrganization = async (): Promise<Site[]> => {
-  const response = await api.get('/site/all/');
+export const getSitesByOrganization = async (organizationId: string): Promise<Site[]> => {
+  const response = await api.get(`/organization/${organizationId}/sites/`);
   return response.data;
 };
