@@ -20,10 +20,44 @@ export default function BulkUpload({ onBack }: { onBack: () => void }) {
         responseType: 'blob'
       });
       
+      // Get the filename from Content-Disposition header or use a default
+      const contentDisposition = response.headers['content-disposition'];
+      let filename = 'worker_template';
+      
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+        if (filenameMatch && filenameMatch[1]) {
+          filename = filenameMatch[1].replace(/['"]/g, '');
+        }
+      }
+
+      // Get the file extension from Content-Type header or use the original
+      const contentType = response.headers['content-type'];
+      let extension = '';
+      
+      if (contentType) {
+        switch (contentType.toLowerCase()) {
+          case 'text/csv':
+            extension = '.csv';
+            break;
+          case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
+            extension = '.xlsx';
+            break;
+          case 'application/vnd.ms-excel':
+            extension = '.xls';
+            break;
+          default:
+            // If no matching content type, try to extract extension from filename
+            const extensionMatch = filename.match(/\.[0-9a-z]+$/i);
+            extension = extensionMatch ? extensionMatch[0] : '.csv';
+        }
+      }
+
+      // Create and trigger download
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', 'worker_template.csv');
+      link.setAttribute('download', `${filename}${extension}`);
       document.body.appendChild(link);
       link.click();
       link.remove();
