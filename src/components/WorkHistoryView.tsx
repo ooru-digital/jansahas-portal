@@ -3,8 +3,11 @@ import { ArrowLeft, Clock, CheckSquare, XCircle, Pencil, Trash2, Award, User, Pl
 import { toast } from 'react-hot-toast';
 import * as WorkHistoryAPI from '../api/workHistory';
 import * as OrganizationsAPI from '../api/organizations';
+import * as DashboardAPI from '../api/dashboard';
 import type { WorkHistory, WorkHistoryResponse, CreateWorkHistoryData } from '../api/workHistory';
 import type { Organization, Site } from '../api/organizations';
+import type { WorkHistoryDetail } from '../api/dashboard';
+import WorkHistoryDetailModal from './WorkHistoryDetailModal';
 
 interface WorkHistoryViewProps {
   workerId: number;
@@ -19,6 +22,7 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
   const [editingHistory, setEditingHistory] = useState<WorkHistory | null>(null);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [sites, setSites] = useState<Site[]>([]);
+  const [selectedWorkHistory, setSelectedWorkHistory] = useState<WorkHistoryDetail | null>(null);
   const [formData, setFormData] = useState<CreateWorkHistoryData>({
     worker_id: workerId,
     work_name: '',
@@ -152,8 +156,30 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
     }
   };
 
+  const handleRowClick = async (workId: number) => {
+    try {
+      const workHistory = await DashboardAPI.getWorkHistoryDetail(workId);
+      setSelectedWorkHistory(workHistory);
+    } catch (error) {
+      toast.error('Failed to fetch work history details');
+    }
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString();
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case 'approved':
+        return 'bg-green-100 text-green-800';
+      case 'rejected':
+        return 'bg-red-100 text-red-800';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
   };
 
   if (loading) {
@@ -430,7 +456,11 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {workHistoryData.data.map((history) => (
-                    <tr key={history.id} className="hover:bg-gray-50">
+                    <tr 
+                      key={history.id} 
+                      className="hover:bg-gray-50 cursor-pointer"
+                      onClick={() => handleRowClick(history.id)}
+                    >
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">{history.work_name}</div>
                       </td>
@@ -480,14 +510,20 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
                         {history.status === 'pending' ? (
                           <>
                             <button
-                              onClick={() => handleEdit(history)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEdit(history);
+                              }}
                               className="text-blue-600 hover:text-blue-900 mr-4"
                               title="Edit"
                             >
                               <Pencil className="h-5 w-5" />
                             </button>
                             <button
-                              onClick={() => handleDelete(history.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete(history.id);
+                              }}
                               className="text-red-600 hover:text-red-900"
                               title="Delete"
                             >
@@ -513,6 +549,13 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
           </div>
         </div>
       </div>
+
+      {selectedWorkHistory && (
+        <WorkHistoryDetailModal
+          workHistory={selectedWorkHistory}
+          onClose={() => setSelectedWorkHistory(null)}
+        />
+      )}
     </div>
   );
 }

@@ -6,12 +6,10 @@ import Dashboard from './components/Dashboard';
 import WorkerManagement from './components/WorkerManagement';
 import Approvals from './components/Approvals';
 
-type UserType = 'jansathi' | 'construction';
 type ActiveView = 'dashboard' | 'workers' | 'approvals';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('tokens'));
-  const [userType, setUserType] = useState<UserType>('jansathi');
   const [activeView, setActiveView] = useState<ActiveView>('dashboard');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -220,32 +218,6 @@ export default function App() {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden">
             <div className="p-8">
               <h1 className="text-2xl font-bold text-gray-900 text-center mb-8">Jansahas Portal</h1>
-
-              <div className="flex border-b mb-6">
-                <button
-                  onClick={() => setUserType('jansathi')}
-                  className={`flex-1 p-4 text-center ${
-                    userType === 'jansathi'
-                      ? 'bg-blue-50 text-blue-600 border-b-2 border-blue-600'
-                      : 'text-gray-600 hover:bg-gray-50'
-                  }`}
-                >
-                  <Users className="inline-block mr-2 h-5 w-5" />
-                  Jansathi
-                </button>
-                <button
-                  onClick={() => setUserType('construction')}
-                  className={`flex-1 p-4 text-center ${
-                    userType === 'construction'
-                      ? 'bg-blue-50 text-blue-600 border-b-2 border-blue-600'
-                      : 'text-gray-600 hover:bg-gray-50'
-                  }`}
-                >
-                  <ClipboardCheck className="inline-block mr-2 h-5 w-5" />
-                  Construction
-                </button>
-              </div>
-
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
                   <label className="block text-gray-700 text-sm font-medium mb-2">

@@ -6,6 +6,7 @@ export interface DashboardCounts {
   total_authorized_signatories: number;
   total_workers: number;
   total_sites: number;
+  total_organizations: number;
 }
 
 export interface WorkDetail {
@@ -22,11 +23,17 @@ export interface WorkDetail {
   updated_at: string;
   number_of_working_days: number;
   isJansathi: boolean;
+  worker_name?: string;
+  site_name?: string;
+  organization_name?: string;
+  photograph?: string;
 }
 
-interface WorkDetailsResponse {
-  count: number;
-  work_details: WorkDetail[];
+export interface WorkHistoryDetail extends WorkDetail {
+  approved_date?: string;
+  rejected_date?: string;
+  organization_id: string;
+  site_id: string;
 }
 
 interface BulkUpdateItem {
@@ -45,17 +52,18 @@ export const getDashboardCounts = async (): Promise<DashboardCounts> => {
 };
 
 export const getRecentWorkDetails = async (status: 'pending' | 'approved' | 'rejected'): Promise<WorkDetail[]> => {
-  const response = await api.get<WorkDetailsResponse>(`/workdetails/status/${status}?count=5`);
+  const response = await api.get(`/workdetails/status/${status}?count=5`);
   return response.data.work_details || [];
+};
+
+export const getWorkHistoryDetail = async (id: number): Promise<WorkHistoryDetail> => {
+  const response = await api.get(`/work-history/${id}/get/`);
+  return response.data;
 };
 
 export const getPendingApprovals = async (): Promise<WorkDetail[]> => {
   const response = await api.get('/approvals/');
   return response.data;
-};
-
-export const updateApprovalStatus = async (id: number, status: 'approved' | 'rejected'): Promise<void> => {
-  await api.patch(`/work-history/${id}/approve/`, { status });
 };
 
 export const bulkUpdateApprovalStatus = async (updates: BulkUpdateItem[]): Promise<BulkUpdateResponse> => {
