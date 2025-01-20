@@ -13,54 +13,30 @@ interface EditWorkerModalProps {
 
 export default function EditWorkerModal({ worker, isOpen, onClose, onWorkerUpdated }: EditWorkerModalProps) {
   const [formData, setFormData] = useState<UpdateWorkerData>({
-    name: worker.name || '',
-    phone_number: worker.phone_number || '',
-    present_address: worker.present_address || '',
-    permanent_address: worker.permanent_address || '',
-    age: worker.age || '',
-    sex: worker.sex || ''
+    name: worker.name,
+    phone_number: worker.phone_number,
+    present_address: worker.present_address,
+    permanent_address: worker.permanent_address,
+    age: worker.age,
+    gender: worker.gender,
+    organization_id: worker.organization_id
   });
 
   if (!isOpen) return null;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    
-    if (name === 'age') {
-      const parsedAge = parseInt(value);
-      setFormData(prev => ({
-        ...prev,
-        age: isNaN(parsedAge) ? '' : parsedAge
-      }));
-    } else if (name === 'gender') {
-      const capitalizedValue = value.charAt(0).toUpperCase() + value.slice(1);
-      setFormData(prev => ({
-        ...prev,
-        sex: capitalizedValue
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value
-      }));
-    }
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     try {
-      // Create a clean copy of the data to send
-      const dataToSend = {
-        name: formData.name,
-        phone_number: formData.phone_number,
-        present_address: formData.present_address,
-        permanent_address: formData.permanent_address,
-        age: formData.age,
-        sex: formData.sex
-      };
-
-      await WorkerAPI.updateWorker(worker.id, dataToSend);
+      await WorkerAPI.updateWorker(worker.id, formData);
       toast.success('Worker updated successfully');
       onWorkerUpdated();
       onClose();
@@ -105,12 +81,12 @@ export default function EditWorkerModal({ worker, isOpen, onClose, onWorkerUpdat
                 Age
               </label>
               <input
-                type="number"
+                type="text"
                 name="age"
                 value={formData.age}
                 onChange={handleInputChange}
-                min="18"
-                max="100"
+                pattern="\d{1,3}"
+                title="Please enter a valid age"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
               />
@@ -122,7 +98,7 @@ export default function EditWorkerModal({ worker, isOpen, onClose, onWorkerUpdat
               </label>
               <select
                 name="gender"
-                value={(formData.sex || '').toLowerCase()}
+                value={formData.gender || ''}
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required

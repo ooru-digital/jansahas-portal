@@ -2,6 +2,12 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { refreshToken } from './auth';
 import { toast } from 'react-hot-toast';
 
+declare module 'axios' {
+  interface InternalAxiosRequestConfig {
+    _retry?: boolean;
+  }
+}
+
 const API_URL = 'https://staging-jansahas.credissuer.com';
 
 const api = axios.create({
@@ -32,21 +38,40 @@ const processQueue = (error: Error | null, token: string | null = null) => {
 const getErrorMessage = (error: AxiosError): string => {
   if (error.response?.data) {
     const data = error.response.data as any;
-    // Check common error message patterns
-    if (typeof data === 'string') return data;
-    if (data.message) return data.message;
-    if (data.error) return data.error;
-    if (data.detail) return data.detail;
-    if (Array.isArray(data)) return data[0];
     
-    // Handle nested error objects
-    if (typeof data === 'object') {
-      const firstError = Object.values(data)[0];
-      if (Array.isArray(firstError)) return firstError[0] as string;
-      if (typeof firstError === 'string') return firstError;
+    // Check for nested error objects first
+    if (typeof data === 'object' && !Array.isArray(data)) {
+      // Look for common error fields
+      const errorFields = ['error', 'message', 'detail', 'errors'];
+      for (const field of errorFields) {
+        if (data[field]) {
+          if (typeof data[field] === 'string') return data[field];
+          if (Array.isArray(data[field])) return data[field][0];
+          if (typeof data[field] === 'object') {
+            const firstError = Object.values(data[field])[0];
+            if (Array.isArray(firstError)) return firstError[0] as string;
+            if (typeof firstError === 'string') return firstError;
+          }
+        }
+      }
+
+      // If no common error fields found, check all object values
+      const firstValue = Object.values(data)[0];
+      if (Array.isArray(firstValue)) return firstValue[0] as string;
+      if (typeof firstValue === 'string') return firstValue;
     }
+
+    // Handle array responses
+    if (Array.isArray(data) && data.length > 0) {
+      return typeof data[0] === 'string' ? data[0] : JSON.stringify(data[0]);
+    }
+
+    // Handle string responses
+    if (typeof data === 'string') return data;
   }
-  return error.message || 'An error occurred';
+
+  // Fallback to axios error message or generic error
+  return error.message || 'An unexpected error occurred';
 };
 
 // Add a request interceptor
@@ -60,7 +85,7 @@ api.interceptors.request.use(
     return config;
   },
   (error) => {
-    const errorMessage = getErrorMessage(error);
+    const errorMessage = getErrorMessage(error as AxiosError);
     toast.error(errorMessage);
     return Promise.reject(error);
   }
@@ -70,7 +95,7 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-    const originalRequest = error.config;
+    const originalRequest = error.config as InternalAxiosRequestConfig;
     
     if (!originalRequest) {
       const errorMessage = getErrorMessage(error);
@@ -78,22 +103,27 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
+    // Handle network errors
+    if (!error.response) {
+      toast.error('Network error. Please check your connection.');
+      return Promise.reject(error);
+    }
+
     // If the error status is 401 and there hasn't been a retry yet
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (error.response.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
         // If token refresh is in progress, add request to queue
-        return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        })
-          .then((token) => {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-            return api(originalRequest);
-          })
-          .catch((err) => {
-            const errorMessage = getErrorMessage(err as AxiosError);
-            toast.error(errorMessage);
-            return Promise.reject(err);
+        try {
+          const token = await new Promise((resolve, reject) => {
+            failedQueue.push({ resolve, reject });
           });
+          originalRequest.headers.Authorization = `Bearer ${token}`;
+          return api(originalRequest);
+        } catch (err) {
+          const errorMessage = getErrorMessage(err as AxiosError);
+          toast.error(errorMessage);
+          return Promise.reject(err);
+        }
       }
 
       originalRequest._retry = true;
@@ -109,21 +139,14 @@ api.interceptors.response.use(
         const response = await refreshToken(tokens.refresh);
         const newTokens = response;
         
-        // Store new tokens
         localStorage.setItem('tokens', JSON.stringify(newTokens));
-        
-        // Update authorization header
         api.defaults.headers.common['Authorization'] = `Bearer ${newTokens.access}`;
         originalRequest.headers.Authorization = `Bearer ${newTokens.access}`;
         
-        // Process queued requests
         processQueue(null, newTokens.access);
         
         return api(originalRequest);
       } catch (refreshError) {
-        // If refresh token fails, clear tokens and redirect to login
-        const errorMessage = getErrorMessage(refreshError as AxiosError);
-        toast.error(errorMessage);
         processQueue(refreshError as Error, null);
         localStorage.removeItem('tokens');
         window.location.href = '/';
@@ -133,9 +156,28 @@ api.interceptors.response.use(
       }
     }
 
-    // For all other errors, show the error message
-    const errorMessage = getErrorMessage(error);
-    toast.error(errorMessage);
+    // Handle specific HTTP status codes
+    switch (error.response.status) {
+      case 400:
+        toast.error('Invalid request. Please check your input.');
+        break;
+      case 403:
+        toast.error('You do not have permission to perform this action.');
+        break;
+      case 404:
+        toast.error('The requested resource was not found.');
+        break;
+      case 422:
+        toast.error('Validation error. Please check your input.');
+        break;
+      case 500:
+        toast.error('Server error. Please try again later.');
+        break;
+      default:
+        // For all other errors, use the error message from the response
+        toast.error(getErrorMessage(error));
+    }
+
     return Promise.reject(error);
   }
 );

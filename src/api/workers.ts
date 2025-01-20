@@ -20,7 +20,7 @@ export interface CreateWorkerData {
   organization_id: string;
   age: string;
   gender: string;
-  photograph: File | null;
+  photograph: string | File | null;
 }
 
 export interface UpdateWorkerData {
@@ -31,6 +31,18 @@ export interface UpdateWorkerData {
   organization_id?: string;
   age?: string;
   gender?: string;
+}
+
+interface ApiWorkerResponse {
+  id: number;
+  name: string;
+  phone_number: string;
+  present_address: string;
+  permanent_address: string;
+  organization_id: string;
+  age: string;
+  sex: string;
+  photograph: string | null;
 }
 
 const convertFileToBase64 = (file: File): Promise<string> => {
@@ -48,17 +60,29 @@ const convertFileToBase64 = (file: File): Promise<string> => {
   });
 };
 
+const mapApiWorkerToClient = (apiWorker: ApiWorkerResponse): Worker => {
+  const { sex, ...rest } = apiWorker;
+  return {
+    ...rest,
+    gender: sex
+  };
+};
+
 export const createWorker = async (data: CreateWorkerData): Promise<Worker> => {
   try {
     let requestData = { ...data };
 
-    // Convert photograph to base64 if it exists
+    // Convert photograph to base64 if it exists and is a File
     if (data.photograph instanceof File) {
-      const base64Image = await convertFileToBase64(data.photograph);
-      requestData = {
-        ...requestData,
-        photograph: base64Image,
-      };
+      try {
+        const base64Image = await convertFileToBase64(data.photograph);
+        requestData = {
+          ...requestData,
+          photograph: base64Image,
+        };
+      } catch (error) {
+        throw new Error('Failed to process photograph. Please try again.');
+      }
     }
 
     // Map gender to sex for API compatibility
@@ -66,21 +90,13 @@ export const createWorker = async (data: CreateWorkerData): Promise<Worker> => {
       ...requestData,
       sex: data.gender,
     };
-    delete apiData.gender;
+    delete (apiData as any).gender;
 
     // Remove the original File object to prevent serialization issues
     delete (apiData as any).photograph_file;
 
-    const response = await api.post('/worker/create/', apiData);
-    
-    // Map sex back to gender in the response
-    const responseData = {
-      ...response.data,
-      gender: response.data.sex,
-    };
-    delete responseData.sex;
-
-    return responseData;
+    const response = await api.post<ApiWorkerResponse>('/worker/create/', apiData);
+    return mapApiWorkerToClient(response.data);
   } catch (error) {
     if (error instanceof Error) {
       throw new Error(`Failed to create worker: ${error.message}`);
@@ -92,22 +108,14 @@ export const createWorker = async (data: CreateWorkerData): Promise<Worker> => {
 export const updateWorker = async (id: number, data: UpdateWorkerData): Promise<Worker> => {
   try {
     // Map gender to sex for API compatibility if gender is being updated
-    const apiData = { ...data };
+    const apiData: Record<string, any> = { ...data };
     if (data.gender) {
       apiData.sex = data.gender;
       delete apiData.gender;
     }
 
-    const response = await api.patch(`/worker/${id}/update/`, apiData);
-    
-    // Map sex back to gender in the response
-    const responseData = {
-      ...response.data,
-      gender: response.data.sex,
-    };
-    delete responseData.sex;
-
-    return responseData;
+    const response = await api.patch<ApiWorkerResponse>(`/worker/${id}/update/`, apiData);
+    return mapApiWorkerToClient(response.data);
   } catch (error) {
     if (error instanceof Error) {
       throw new Error(`Failed to update worker: ${error.message}`);
@@ -118,15 +126,8 @@ export const updateWorker = async (id: number, data: UpdateWorkerData): Promise<
 
 export const getWorkers = async (): Promise<Worker[]> => {
   try {
-    const response = await api.get('/workers/');
-    
-    // Map sex to gender in each worker object
-    const workers = response.data.map((worker: any) => ({
-      ...worker,
-      gender: worker.sex,
-    }));
-
-    return workers;
+    const response = await api.get<ApiWorkerResponse[]>('/workers/');
+    return response.data.map(mapApiWorkerToClient);
   } catch (error) {
     if (error instanceof Error) {
       throw new Error(`Failed to fetch workers: ${error.message}`);
@@ -137,16 +138,8 @@ export const getWorkers = async (): Promise<Worker[]> => {
 
 export const getWorker = async (id: number): Promise<Worker> => {
   try {
-    const response = await api.get(`/worker/${id}/`);
-    
-    // Map sex to gender in the response
-    const worker = {
-      ...response.data,
-      gender: response.data.sex,
-    };
-    delete worker.sex;
-
-    return worker;
+    const response = await api.get<ApiWorkerResponse>(`/worker/${id}/`);
+    return mapApiWorkerToClient(response.data);
   } catch (error) {
     if (error instanceof Error) {
       throw new Error(`Failed to fetch worker: ${error.message}`);
