@@ -1,33 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Plus, X, ChevronRight } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { ArrowLeft, Camera, Upload, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import * as WorkerAPI from '../api/workers';
 import type { CreateWorkerData } from '../api/workers';
-import * as OrganizationsAPI from '../api/organizations';
-import type { Organization, Site } from '../api/organizations';
-import * as WorkHistoryAPI from '../api/workHistory';
-
-const initialWorkerData: CreateWorkerData = {
-  name: '',
-  aadhar_number: '',
-  phone_number: '',
-  present_address: '',
-  permanent_address: '',
-  age: '',
-  gender: '',
-  photograph: null,
-  organization_id: ''
-};
-
-const initialWorkHistoryData = {
-  organization_id: '',
-  site_id: '',
-  work_name: '',
-  work_type: '',
-  location: '',
-  start_date: '',
-  end_date: ''
-};
 
 interface AddWorkerProps {
   onBack: () => void;
@@ -35,103 +10,142 @@ interface AddWorkerProps {
 }
 
 export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
-  const [step, setStep] = useState(1);
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
-  const [sites, setSites] = useState<Site[]>([]);
-  const [formData, setFormData] = useState<CreateWorkerData>(initialWorkerData);
-  const [workHistoryData, setWorkHistoryData] = useState(initialWorkHistoryData);
+  const [formData, setFormData] = useState<CreateWorkerData>({
+    name: '',
+    phone_number: '',
+    present_address: '',
+    permanent_address: '',
+    organization_id: '',
+    age: '',
+    gender: 'Male',
+    photograph: null,
+  });
+
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-  const [createdWorkerId, setCreatedWorkerId] = useState<number | null>(null);
+  const [showCamera, setShowCamera] = useState(false);
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const photoRef = useRef<HTMLCanvasElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    fetchOrganizations();
+    if (showCamera && !stream) {
+      initializeCamera();
+    }
+  }, [showCamera]);
+
+  useEffect(() => {
+    return () => {
+      stopCamera();
+    };
   }, []);
 
-  useEffect(() => {
-    if (workHistoryData.organization_id) {
-      fetchSites(workHistoryData.organization_id);
-    }
-  }, [workHistoryData.organization_id]);
-
-  const fetchOrganizations = async () => {
+  const initializeCamera = async () => {
     try {
-      const data = await OrganizationsAPI.getOrganizations();
-      setOrganizations(data);
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: 'user',
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
+      });
+      
+      setStream(mediaStream);
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream;
+      }
     } catch (error) {
-      toast.error('Failed to fetch organizations');
+      toast.error('Unable to access camera');
+      setShowCamera(false);
     }
   };
 
-  const fetchSites = async (organizationId: string) => {
-    try {
-      const data = await OrganizationsAPI.getSitesByOrganization(organizationId);
-      setSites(data);
-    } catch (error) {
-      toast.error('Failed to fetch sites');
-    }
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    if (step === 1) {
-      setFormData(prev => ({ ...prev, [name]: value }));
-    } else {
-      setWorkHistoryData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => ({
+      ...prev,
+      [name]: name === 'age' ? (value === '' ? '' : value) : value
+    }));
+  };
+
+  const startCamera = () => {
+    setShowCamera(true);
+  };
+
+  const stopCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+    setShowCamera(false);
+  };
+
+  const capturePhoto = () => {
+    if (videoRef.current && photoRef.current) {
+      const video = videoRef.current;
+      const canvas = photoRef.current;
+      const context = canvas.getContext('2d');
+
+      // Set canvas dimensions to match video aspect ratio
+      const { videoWidth, videoHeight } = video;
+      const aspectRatio = videoWidth / videoHeight;
+      
+      // Target width and height for the captured photo
+      const targetWidth = 800;
+      const targetHeight = targetWidth / aspectRatio;
+      
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+
+      // Draw the video frame to the canvas
+      context?.drawImage(video, 0, 0, targetWidth, targetHeight);
+
+      // Convert canvas to blob
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const file = new File([blob], 'photo.jpg', { type: 'image/jpeg' });
+          setFormData(prev => ({ ...prev, photograph: file }));
+          setPhotoPreview(URL.createObjectURL(blob));
+        }
+      }, 'image/jpeg', 0.8);
+
+      stopCamera();
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error('File size should be less than 5MB');
-        e.target.value = '';
-        return;
+      if (file.type.startsWith('image/')) {
+        setFormData(prev => ({ ...prev, photograph: file }));
+        setPhotoPreview(URL.createObjectURL(file));
+      } else {
+        toast.error('Please upload an image file');
       }
-      if (!['image/jpeg', 'image/png'].includes(file.type)) {
-        toast.error('Only JPEG/PNG files are allowed');
-        e.target.value = '';
-        return;
-      }
-      setFormData(prev => ({ ...prev, photograph: file }));
-      
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhotoPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
     }
   };
 
-  const removePhoto = () => {
-    setFormData(prev => ({ ...prev, photograph: null }));
+  const clearPhoto = () => {
     setPhotoPreview(null);
+    setFormData(prev => ({ ...prev, photograph: null }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (step === 1) {
-      try {
-        const worker = await WorkerAPI.createWorker(formData);
-        toast.success('Worker added successfully');
-        setCreatedWorkerId(worker.id);
-        setStep(2);
-      } catch (error) {
-        toast.error('Failed to add worker');
-      }
-    } else {
-      try {
-        if (createdWorkerId) {
-          await WorkHistoryAPI.createWorkHistory({
-            ...workHistoryData,
-            worker_id: createdWorkerId
-          });
-          toast.success('Work history added successfully');
-          onWorkerAdded();
-        }
-      } catch (error) {
-        toast.error('Failed to add work history');
-      }
+
+    // Validate age
+    if (!formData.age || parseInt(formData.age) < 18 || parseInt(formData.age) > 100) {
+      toast.error('Please enter a valid age between 18 and 100');
+      return;
+    }
+
+    try {
+      await WorkerAPI.createWorker(formData);
+      toast.success('Worker added successfully');
+      onWorkerAdded();
+    } catch (error) {
+      toast.error('Failed to add worker');
     }
   };
 
@@ -153,304 +167,218 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
         <div className="max-w-3xl mx-auto">
           <div className="bg-white rounded-lg shadow-sm">
             <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h1 className="text-2xl font-bold text-gray-900">
-                  {step === 1 ? 'Add New Worker' : 'Add Work History'}
-                </h1>
-                <div className="flex items-center gap-2 text-sm text-gray-500">
-                  <span className={step === 1 ? 'text-blue-600 font-medium' : ''}>Worker Details</span>
-                  <ChevronRight className="h-4 w-4" />
-                  <span className={step === 2 ? 'text-blue-600 font-medium' : ''}>Work History</span>
-                </div>
-              </div>
+              <h1 className="text-2xl font-bold text-gray-900 mb-6">Add New Worker</h1>
               
-              {step === 1 ? (
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  {/* Worker form fields */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Full Name
-                      </label>
-                      <input
-                        type="text"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        required
-                      />
-                    </div>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Full Name
+                    </label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    />
+                  </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Age
-                      </label>
-                      <input
-                        type="number"
-                        name="age"
-                        value={formData.age}
-                        onChange={handleInputChange}
-                        min="18"
-                        max="100"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        required
-                      />
-                    </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Age
+                    </label>
+                    <input
+                      type="number"
+                      name="age"
+                      value={formData.age}
+                      onChange={handleInputChange}
+                      min="18"
+                      max="100"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    />
+                  </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Gender
-                      </label>
-                      <select
-                        name="gender"
-                        value={formData.gender}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        required
-                      >
-                        <option value="">Select Gender</option>
-                        <option value="male">Male</option>
-                        <option value="female">Female</option>
-                        <option value="other">Other</option>
-                      </select>
-                    </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Gender
+                    </label>
+                    <select
+                      name="gender"
+                      value={formData.gender}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    >
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Others">Others</option>
+                    </select>
+                  </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Aadhaar Number
-                      </label>
-                      <input
-                        type="text"
-                        name="aadhar_number"
-                        value={formData.aadhar_number}
-                        onChange={handleInputChange}
-                        pattern="[0-9]{12}"
-                        title="Please enter a valid 12-digit Aadhaar number"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        required
-                      />
-                    </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Phone Number
+                    </label>
+                    <input
+                      type="tel"
+                      name="phone_number"
+                      value={formData.phone_number}
+                      onChange={handleInputChange}
+                      pattern="[0-9]{10}"
+                      title="Please enter a valid 10-digit phone number"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    />
+                  </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Phone Number
-                      </label>
-                      <input
-                        type="tel"
-                        name="phone_number"
-                        value={formData.phone_number}
-                        onChange={handleInputChange}
-                        pattern="[0-9]{10}"
-                        title="Please enter a valid 10-digit phone number"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        required
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="block text-sm font-medium text-gray-700">
-                        Photograph
-                      </label>
-                      <div className="flex items-start space-x-4">
-                        <div className="flex-1">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Photograph
+                    </label>
+                    <div className="mt-1 flex items-center gap-4">
+                      {!photoPreview && !showCamera && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={startCamera}
+                            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                          >
+                            <Camera className="h-5 w-5 mr-2" />
+                            Take Photo
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                          >
+                            <Upload className="h-5 w-5 mr-2" />
+                            Upload Photo
+                          </button>
                           <input
+                            ref={fileInputRef}
                             type="file"
-                            name="photograph"
-                            onChange={handleFileChange}
-                            accept="image/jpeg,image/png"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            accept="image/*"
+                            onChange={handleFileUpload}
+                            className="hidden"
                           />
-                          <p className="mt-1 text-sm text-gray-500">Optional. Max size: 5MB. JPEG/PNG only.</p>
+                        </>
+                      )}
+                      {photoPreview && (
+                        <div className="relative">
+                          <img
+                            src={photoPreview}
+                            alt="Preview"
+                            className="h-32 w-32 object-cover rounded-lg"
+                          />
+                          <button
+                            type="button"
+                            onClick={clearPhoto}
+                            className="absolute -top-2 -right-2 p-1 bg-red-100 rounded-full text-red-600 hover:bg-red-200"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
                         </div>
-                        {photoPreview && (
-                          <div className="relative">
-                            <img
-                              src={photoPreview}
-                              alt="Preview"
-                              className="w-24 h-24 object-cover rounded-lg border border-gray-300"
-                            />
-                            <button
-                              type="button"
-                              onClick={removePhoto}
-                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                            >
-                              <X className="h-4 w-4" />
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Present Address
-                      </label>
-                      <textarea
-                        name="present_address"
-                        value={formData.present_address}
-                        onChange={handleInputChange}
-                        rows={3}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        required
-                      />
-                    </div>
-
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Permanent Address
-                      </label>
-                      <textarea
-                        name="permanent_address"
-                        value={formData.permanent_address}
-                        onChange={handleInputChange}
-                        rows={3}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        required
-                      />
+                      )}
                     </div>
                   </div>
 
-                  <div className="flex justify-end gap-4">
-                    <button
-                      type="button"
-                      onClick={onBack}
-                      className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
-                    >
-                      Continue to Add Work History
-                      <ChevronRight className="h-5 w-5" />
-                    </button>
-                  </div>
-                </form>
-              ) : (
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  {/* Work History form fields */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Organization</label>
-                      <select
-                        name="organization_id"
-                        value={workHistoryData.organization_id}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        required
-                      >
-                        <option value="">Select Organization</option>
-                        {organizations.map(org => (
-                          <option key={org.id} value={org.id}>{org.name}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Site</label>
-                      <select
-                        name="site_id"
-                        value={workHistoryData.site_id}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        required
-                        disabled={!workHistoryData.organization_id}
-                      >
-                        <option value="">Select Site</option>
-                        {sites.map(site => (
-                          <option key={site.id} value={site.id}>{site.name}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Work Name</label>
-                      <input
-                        type="text"
-                        name="work_name"
-                        value={workHistoryData.work_name}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Work Type</label>
-                      <select
-                        name="work_type"
-                        value={workHistoryData.work_type}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        required
-                      >
-                        <option value="">Select Work Type</option>
-                        <option value="Full-time">Full-time</option>
-                        <option value="Part-time">Part-time</option>
-                        <option value="Contract">Contract</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
-                      <input
-                        type="text"
-                        name="location"
-                        value={workHistoryData.location}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-                      <input
-                        type="date"
-                        name="start_date"
-                        value={workHistoryData.start_date}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-                      <input
-                        type="date"
-                        name="end_date"
-                        value={workHistoryData.end_date}
-                        onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        required
-                      />
-                    </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Present Address
+                    </label>
+                    <textarea
+                      name="present_address"
+                      value={formData.present_address}
+                      onChange={handleInputChange}
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    />
                   </div>
 
-                  <div className="flex justify-end gap-4">
-                    <button
-                      type="button"
-                      onClick={onBack}
-                      className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                    >
-                      Save
-                    </button>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Permanent Address
+                    </label>
+                    <textarea
+                      name="permanent_address"
+                      value={formData.permanent_address}
+                      onChange={handleInputChange}
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    />
                   </div>
-                </form>
-              )}
+                </div>
+
+                <div className="flex justify-end gap-4">
+                  <button
+                    type="button"
+                    onClick={onBack}
+                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  >
+                    Add Worker
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>
       </div>
+
+      {showCamera && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full overflow-hidden">
+            <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+              <h3 className="text-lg font-medium text-gray-900">Take Photo</h3>
+              <button
+                type="button"
+                onClick={stopCamera}
+                className="text-gray-400 hover:text-gray-500"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <div className="p-4">
+              <div className="relative bg-black rounded-lg overflow-hidden">
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  className="w-full h-auto"
+                  style={{ transform: 'scaleX(-1)' }}
+                />
+                <canvas ref={photoRef} className="hidden" />
+                
+                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
+                  <button
+                    type="button"
+                    onClick={capturePhoto}
+                    className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-full shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    <Camera className="h-5 w-5 mr-2" />
+                    Capture Photo
+                  </button>
+                </div>
+              </div>
+              
+              <p className="mt-2 text-sm text-gray-500 text-center">
+                Position yourself in the frame and click the capture button
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

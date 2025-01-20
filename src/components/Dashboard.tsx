@@ -1,14 +1,82 @@
 import React, { useEffect, useState } from 'react';
-import { Building2, Users, UserRound, CheckSquare, Clock, XCircle, Calendar } from 'lucide-react';
+import { Building2, Users, UserRound, CheckSquare, Clock, XCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { getDashboardCounts, getRecentWorkDetails, DashboardCounts, WorkDetail } from '../api/dashboard';
+import { getAllSites, Site } from '../api/sites';
 
-interface WorkListProps {
+const WorkList = ({ title, works, icon: Icon, colorClass }: { 
   title: string;
   works: WorkDetail[];
   icon: React.ElementType;
   colorClass: string;
-}
+}) => (
+  <div className="bg-white rounded-xl shadow-sm p-6">
+    <h2 className="text-2xl font-bold mb-6">{title}</h2>
+    <div className="overflow-x-auto">
+      <table className="min-w-full">
+        <thead>
+          <tr className="border-b">
+            <th className="text-left pb-3 text-gray-600 font-medium">Image</th>
+            <th className="text-left pb-3 text-gray-600 font-medium">Worker</th>
+            <th className="text-left pb-3 text-gray-600 font-medium">Work Name</th>
+            <th className="text-left pb-3 text-gray-600 font-medium">Created At</th>
+            <th className="text-left pb-3 text-gray-600 font-medium">Status</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y">
+          {works.map((work) => (
+            <tr key={work.id} className="hover:bg-gray-50">
+              <td className="py-4 pr-4">
+                {work.photograph ? (
+                  <img
+                    src={work.photograph}
+                    alt={work.worker_name}
+                    className="h-10 w-10 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center">
+                    <UserRound className="h-6 w-6 text-gray-400" />
+                  </div>
+                )}
+              </td>
+              <td className="py-4">
+                <p className="font-medium text-gray-900">{work.worker_name}</p>
+                <p className="text-xs text-gray-500">{work.site_name} - {work.organization_name}</p>
+              </td>
+              <td className="py-4">
+                <p className="text-sm text-gray-900">{work.work_name}</p>
+                <p className="text-xs text-gray-500">{work.work_type}</p>
+              </td>
+              <td className="py-4">
+                <p className="text-sm text-gray-500">
+                  {new Date(work.created_at).toLocaleDateString()}
+                </p>
+              </td>
+              <td className="py-4">
+                <span className={`inline-flex px-3 py-1 text-xs font-medium rounded-full ${
+                  work.status === 'pending'
+                    ? 'bg-yellow-100 text-yellow-800'
+                    : work.status === 'approved'
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-red-100 text-red-800'
+                }`}>
+                  {work.status.charAt(0).toUpperCase() + work.status.slice(1)}
+                </span>
+              </td>
+            </tr>
+          ))}
+          {works.length === 0 && (
+            <tr>
+              <td colSpan={5} className="py-4 text-center text-gray-500">
+                No records found
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  </div>
+);
 
 export default function Dashboard({ onNavigate }: { onNavigate: (view: string) => void }) {
   const [counts, setCounts] = useState<DashboardCounts | null>(null);
@@ -17,6 +85,8 @@ export default function Dashboard({ onNavigate }: { onNavigate: (view: string) =
   const [rejectedWorks, setRejectedWorks] = useState<WorkDetail[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sites, setSites] = useState<Site[]>([]);
+  const [showSites, setShowSites] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -57,72 +127,15 @@ export default function Dashboard({ onNavigate }: { onNavigate: (view: string) =
     };
   }, []);
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString();
+  const handleSitesClick = async () => {
+    try {
+      const sitesData = await getAllSites();
+      setSites(sitesData);
+      setShowSites(true);
+    } catch (error) {
+      toast.error('Failed to fetch sites');
+    }
   };
-
-  const WorkList: React.FC<WorkListProps> = ({ title, works = [], icon: Icon, colorClass }) => (
-    <div className="bg-white rounded-xl shadow-sm p-4 md:p-6">
-      <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6">{title}</h2>
-      <div className="overflow-x-auto -mx-4 md:mx-0">
-        <div className="inline-block min-w-full align-middle">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead>
-              <tr className="border-b">
-                <th scope="col" className="hidden md:table-cell px-3 py-3 text-left text-xs font-medium text-gray-600">Image</th>
-                <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-600">Worker</th>
-                <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-600">Work Name</th>
-                <th scope="col" className="hidden sm:table-cell px-3 py-3 text-left text-xs font-medium text-gray-600">Created At</th>
-                <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-600">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {works.map((work) => (
-                <tr key={work.id} className="hover:bg-gray-50">
-                  <td className="hidden md:table-cell px-3 py-4">
-                    <div className="w-8 h-8 md:w-10 md:h-10 bg-gray-200 rounded-full"></div>
-                  </td>
-                  <td className="px-3 py-4">
-                    <div className="flex flex-col">
-                      <p className="text-sm font-medium text-gray-900">{work.worker}</p>
-                      <p className="text-xs text-gray-500 mt-1">{work.site}</p>
-                    </div>
-                  </td>
-                  <td className="px-3 py-4">
-                    <p className="text-sm text-gray-900">{work.work_name}</p>
-                  </td>
-                  <td className="hidden sm:table-cell px-3 py-4">
-                    <p className="text-sm text-gray-600">{formatDate(work.created_at)}</p>
-                  </td>
-                  <td className="px-3 py-4">
-                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                      work.status === 'pending'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : work.status === 'approved'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {work.status.charAt(0).toUpperCase() + work.status.slice(1)}
-                    </span>
-                    <span className="block sm:hidden text-xs text-gray-500 mt-1">
-                      {formatDate(work.created_at)}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-              {works.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="px-3 py-4 text-center text-gray-500 text-sm">
-                    No records found
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
 
   if (loading) {
     return (
@@ -134,13 +147,13 @@ export default function Dashboard({ onNavigate }: { onNavigate: (view: string) =
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white p-6 md:p-8 rounded-lg shadow-sm text-center max-w-md w-full">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="bg-white p-8 rounded-lg shadow-sm text-center">
           <h2 className="text-xl font-semibold text-red-600 mb-2">Error Loading Dashboard</h2>
           <p className="text-gray-600">{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 w-full sm:w-auto"
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
             Retry
           </button>
@@ -150,85 +163,132 @@ export default function Dashboard({ onNavigate }: { onNavigate: (view: string) =
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
+    <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6 md:mb-8">Dashboard</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-8">Dashboard</h1>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
-          <div className="bg-white rounded-xl shadow-sm p-4 md:p-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white rounded-xl shadow-sm p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Pending Approvals</p>
-                <p className="text-xl md:text-2xl font-bold text-gray-900">{counts?.pending_approval_count || 0}</p>
+                <p className="text-2xl font-bold text-gray-900">{counts?.pending_approval_count || 0}</p>
               </div>
-              <Clock className="h-8 w-8 md:h-10 md:w-10 text-yellow-600" />
+              <Clock className="h-10 w-10 text-yellow-600" />
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm p-4 md:p-6">
+          <div className="bg-white rounded-xl shadow-sm p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Approved Works</p>
-                <p className="text-xl md:text-2xl font-bold text-gray-900">{counts?.approved_work_count || 0}</p>
+                <p className="text-2xl font-bold text-gray-900">{counts?.approved_work_count || 0}</p>
               </div>
-              <CheckSquare className="h-8 w-8 md:h-10 md:w-10 text-green-600" />
+              <CheckSquare className="h-10 w-10 text-green-600" />
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm p-4 md:p-6">
+          <button
+            onClick={handleSitesClick}
+            className="bg-white rounded-xl shadow-sm p-6 hover:bg-gray-50 transition-colors duration-200"
+          >
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Sites</p>
-                <p className="text-xl md:text-2xl font-bold text-gray-900">{counts?.total_sites || 0}</p>
+                <p className="text-2xl font-bold text-gray-900">{counts?.total_sites || 0}</p>
               </div>
-              <Building2 className="h-8 w-8 md:h-10 md:w-10 text-blue-600" />
+              <Building2 className="h-10 w-10 text-blue-600" />
             </div>
-          </div>
+          </button>
 
-          <div className="bg-white rounded-xl shadow-sm p-4 md:p-6">
+          <div className="bg-white rounded-xl shadow-sm p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Authorized Signatories</p>
-                <p className="text-xl md:text-2xl font-bold text-gray-900">{counts?.total_authorized_signatories || 0}</p>
+                <p className="text-2xl font-bold text-gray-900">{counts?.total_authorized_signatories || 0}</p>
               </div>
-              <Users className="h-8 w-8 md:h-10 md:w-10 text-purple-600" />
+              <Users className="h-10 w-10 text-purple-600" />
             </div>
           </div>
 
           <button
             onClick={() => onNavigate('workers')}
-            className="bg-white rounded-xl shadow-sm p-4 md:p-6 hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            className="bg-white rounded-xl shadow-sm p-6 hover:bg-gray-50 transition-colors duration-200"
           >
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Workers</p>
-                <p className="text-xl md:text-2xl font-bold text-gray-900">{counts?.total_workers || 0}</p>
+                <p className="text-2xl font-bold text-gray-900">{counts?.total_workers || 0}</p>
               </div>
-              <UserRound className="h-8 w-8 md:h-10 md:w-10 text-indigo-600" />
+              <UserRound className="h-10 w-10 text-indigo-600" />
             </div>
           </button>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 md:gap-6">
-          <WorkList
-            title="Recent Pending Approvals"
-            works={pendingWorks}
-            icon={Clock}
-            colorClass="text-yellow-600"
-          />
-          <WorkList
-            title="Recent Approved Works"
-            works={approvedWorks}
-            icon={CheckSquare}
-            colorClass="text-green-600"
-          />
-          <WorkList
-            title="Recent Rejected Works"
-            works={rejectedWorks}
-            icon={XCircle}
-            colorClass="text-red-600"
-          />
-        </div>
+        {showSites ? (
+          <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold">Sites</h2>
+              <button
+                onClick={() => setShowSites(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <XCircle className="h-6 w-6" />
+              </button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left pb-3 text-gray-600 font-medium">Name</th>
+                    <th className="text-left pb-3 text-gray-600 font-medium">Created At</th>
+                    <th className="text-left pb-3 text-gray-600 font-medium">Updated At</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {sites.map((site) => (
+                    <tr key={site.id} className="hover:bg-gray-50">
+                      <td className="py-4">
+                        <p className="font-medium text-gray-900">{site.name}</p>
+                      </td>
+                      <td className="py-4">
+                        <p className="text-sm text-gray-500">
+                          {new Date(site.created_at).toLocaleDateString()}
+                        </p>
+                      </td>
+                      <td className="py-4">
+                        <p className="text-sm text-gray-500">
+                          {new Date(site.updated_at).toLocaleDateString()}
+                        </p>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-6">
+            <WorkList
+              title="Recent Pending Approvals"
+              works={pendingWorks}
+              icon={Clock}
+              colorClass="text-yellow-600"
+            />
+            <WorkList
+              title="Recent Approved Works"
+              works={approvedWorks}
+              icon={CheckSquare}
+              colorClass="text-green-600"
+            />
+            <WorkList
+              title="Recent Rejected Works"
+              works={rejectedWorks}
+              icon={XCircle}
+              colorClass="text-red-600"
+            />
+          </div>
+        )}
       </div>
     </div>
   );
