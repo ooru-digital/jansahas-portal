@@ -173,7 +173,7 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Full Name
+                      Full Name <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
@@ -187,7 +187,7 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Age
+                      Age <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="number"
@@ -203,7 +203,7 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Gender
+                      Gender <span className="text-red-500">*</span>
                     </label>
                     <select
                       name="gender"
@@ -220,7 +220,7 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Phone Number
+                      Phone Number <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="tel"
@@ -287,7 +287,7 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
 
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Present Address
+                      Present Address <span className="text-red-500">*</span>
                     </label>
                     <textarea
                       name="present_address"
@@ -295,13 +295,12 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
                       onChange={handleInputChange}
                       rows={3}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      required
                     />
                   </div>
 
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Permanent Address
+                      Permanent Address <span className="text-red-500">*</span>
                     </label>
                     <textarea
                       name="permanent_address"
@@ -309,7 +308,6 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
                       onChange={handleInputChange}
                       rows={3}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      required
                     />
                   </div>
                 </div>
