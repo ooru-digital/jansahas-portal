@@ -29,6 +29,9 @@ export interface WorkHistoryResponse {
   present_address: string;
   permanent_address: string;
   total_no_of_approved_working_days: number;
+  age: string;
+  gender: string;
+  photograph: string | null;
 }
 
 export interface CreateWorkHistoryData {

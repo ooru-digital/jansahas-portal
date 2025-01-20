@@ -6,6 +6,12 @@ import { getAllSites, Site } from '../api/sites';
 import { getOrganizations, Organization } from '../api/organizations';
 import WorkHistoryDetailModal from './WorkHistoryDetailModal';
 
+type ActiveView = 'dashboard' | 'workers' | 'approvals';
+
+interface DashboardProps {
+  onNavigate: (view: ActiveView) => void;
+}
+
 const WorkList = ({ title, works, icon: Icon, colorClass, onWorkClick }: { 
   title: string;
   works: WorkDetail[];
@@ -85,7 +91,7 @@ const WorkList = ({ title, works, icon: Icon, colorClass, onWorkClick }: {
   </div>
 );
 
-export default function Dashboard({ onNavigate }: { onNavigate: (view: string) => void }) {
+export default function Dashboard({ onNavigate }: DashboardProps) {
   const [counts, setCounts] = useState<DashboardCounts | null>(null);
   const [pendingWorks, setPendingWorks] = useState<WorkDetail[]>([]);
   const [approvedWorks, setApprovedWorks] = useState<WorkDetail[]>([]);
