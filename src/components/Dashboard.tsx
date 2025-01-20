@@ -1,14 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { Building2, Users, UserRound, CheckSquare, Clock, XCircle } from 'lucide-react';
+import { Building2, Users, UserRound, CheckSquare, Clock, XCircle, Building } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import { getDashboardCounts, getRecentWorkDetails, DashboardCounts, WorkDetail } from '../api/dashboard';
+import { getDashboardCounts, getRecentWorkDetails, getWorkHistoryDetail, DashboardCounts, WorkDetail, WorkHistoryDetail } from '../api/dashboard';
 import { getAllSites, Site } from '../api/sites';
+import { getOrganizations, Organization } from '../api/organizations';
+import WorkHistoryDetailModal from './WorkHistoryDetailModal';
 
-const WorkList = ({ title, works, icon: Icon, colorClass }: { 
+const WorkList = ({ title, works, icon: Icon, colorClass, onWorkClick }: { 
   title: string;
   works: WorkDetail[];
   icon: React.ElementType;
   colorClass: string;
+  onWorkClick?: (workId: number) => void;
 }) => (
   <div className="bg-white rounded-xl shadow-sm p-6">
     <h2 className="text-2xl font-bold mb-6">{title}</h2>
@@ -25,7 +28,11 @@ const WorkList = ({ title, works, icon: Icon, colorClass }: {
         </thead>
         <tbody className="divide-y">
           {works.map((work) => (
-            <tr key={work.id} className="hover:bg-gray-50">
+            <tr 
+              key={work.id} 
+              className={`hover:bg-gray-50 ${onWorkClick ? 'cursor-pointer' : ''}`}
+              onClick={() => onWorkClick?.(work.id)}
+            >
               <td className="py-4 pr-4">
                 {work.photograph ? (
                   <img
@@ -86,7 +93,10 @@ export default function Dashboard({ onNavigate }: { onNavigate: (view: string) =
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sites, setSites] = useState<Site[]>([]);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [showSites, setShowSites] = useState(false);
+  const [showOrganizations, setShowOrganizations] = useState(false);
+  const [selectedWorkHistory, setSelectedWorkHistory] = useState<WorkHistoryDetail | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -132,8 +142,29 @@ export default function Dashboard({ onNavigate }: { onNavigate: (view: string) =
       const sitesData = await getAllSites();
       setSites(sitesData);
       setShowSites(true);
+      setShowOrganizations(false);
     } catch (error) {
       toast.error('Failed to fetch sites');
+    }
+  };
+
+  const handleOrganizationsClick = async () => {
+    try {
+      const organizationsData = await getOrganizations();
+      setOrganizations(organizationsData);
+      setShowOrganizations(true);
+      setShowSites(false);
+    } catch (error) {
+      toast.error('Failed to fetch organizations');
+    }
+  };
+
+  const handleWorkClick = async (workId: number) => {
+    try {
+      const workHistory = await getWorkHistoryDetail(workId);
+      setSelectedWorkHistory(workHistory);
+    } catch (error) {
+      toast.error('Failed to fetch work history details');
     }
   };
 
@@ -201,6 +232,19 @@ export default function Dashboard({ onNavigate }: { onNavigate: (view: string) =
             </div>
           </button>
 
+          <button
+            onClick={handleOrganizationsClick}
+            className="bg-white rounded-xl shadow-sm p-6 hover:bg-gray-50 transition-colors duration-200"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Organizations</p>
+                <p className="text-2xl font-bold text-gray-900">{counts?.total_organizations || 0}</p>
+              </div>
+              <Building className="h-10 w-10 text-orange-600" />
+            </div>
+          </button>
+
           <div className="bg-white rounded-xl shadow-sm p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -225,7 +269,7 @@ export default function Dashboard({ onNavigate }: { onNavigate: (view: string) =
           </button>
         </div>
 
-        {showSites ? (
+        {showSites && (
           <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold">Sites</h2>
@@ -242,7 +286,6 @@ export default function Dashboard({ onNavigate }: { onNavigate: (view: string) =
                   <tr className="border-b">
                     <th className="text-left pb-3 text-gray-600 font-medium">Name</th>
                     <th className="text-left pb-3 text-gray-600 font-medium">Created At</th>
-                    <th className="text-left pb-3 text-gray-600 font-medium">Updated At</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
@@ -256,24 +299,74 @@ export default function Dashboard({ onNavigate }: { onNavigate: (view: string) =
                           {new Date(site.created_at).toLocaleDateString()}
                         </p>
                       </td>
-                      <td className="py-4">
-                        <p className="text-sm text-gray-500">
-                          {new Date(site.updated_at).toLocaleDateString()}
-                        </p>
-                      </td>
                     </tr>
                   ))}
+                  {sites.length === 0 && (
+                    <tr>
+                      <td colSpan={2} className="py-4 text-center text-gray-500">
+                        No sites found
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
           </div>
-        ) : (
+        )}
+
+        {showOrganizations && (
+          <div className="bg-white rounded-xl shadow-sm p-6 mb-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold">Organizations</h2>
+              <button
+                onClick={() => setShowOrganizations(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <XCircle className="h-6 w-6" />
+              </button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left pb-3 text-gray-600 font-medium">Name</th>
+                    <th className="text-left pb-3 text-gray-600 font-medium">Created At</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {organizations.map((org) => (
+                    <tr key={org.id} className="hover:bg-gray-50">
+                      <td className="py-4">
+                        <p className="font-medium text-gray-900">{org.name}</p>
+                      </td>
+                      <td className="py-4">
+                        <p className="text-sm text-gray-500">
+                          {new Date(org.created_at).toLocaleDateString()}
+                        </p>
+                      </td>
+                    </tr>
+                  ))}
+                  {organizations.length === 0 && (
+                    <tr>
+                      <td colSpan={2} className="py-4 text-center text-gray-500">
+                        No organizations found
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {!showSites && !showOrganizations && (
           <div className="grid grid-cols-1 gap-6">
             <WorkList
               title="Recent Pending Approvals"
               works={pendingWorks}
               icon={Clock}
               colorClass="text-yellow-600"
+              onWorkClick={handleWorkClick}
             />
             <WorkList
               title="Recent Approved Works"
@@ -288,6 +381,13 @@ export default function Dashboard({ onNavigate }: { onNavigate: (view: string) =
               colorClass="text-red-600"
             />
           </div>
+        )}
+
+        {selectedWorkHistory && (
+          <WorkHistoryDetailModal
+            workHistory={selectedWorkHistory}
+            onClose={() => setSelectedWorkHistory(null)}
+          />
         )}
       </div>
     </div>

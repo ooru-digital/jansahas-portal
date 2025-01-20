@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronRight, Search, Plus, FileUp, History, Trash2, Pencil, User } from 'lucide-react';
-import { toast, Toaster } from 'react-hot-toast';
+import { ChevronRight, Search, Plus, Upload, History, Trash2, Pencil, User } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import * as WorkerAPI from '../api/workers';
 import type { Worker } from '../api/workers';
 import WorkHistoryView from './WorkHistoryView';
@@ -117,7 +117,7 @@ export default function WorkerManagement() {
                   onClick={() => setShowBulkUpload(true)}
                   className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 w-full sm:w-auto"
                 >
-                  <FileUp className="h-4 w-4 mr-2" />
+                  <Upload className="h-4 w-4 mr-2" />
                   Add in Bulk
                 </button>
                 <button
@@ -261,31 +261,6 @@ export default function WorkerManagement() {
         onConfirm={confirmDelete}
         title="Delete Worker"
         message="Are you sure you want to delete this worker? This will also delete all their work history and cannot be undone."
-      />
-
-      <Toaster 
-        position="top-right"
-        toastOptions={{
-          duration: 3000,
-          style: {
-            background: '#363636',
-            color: '#fff',
-          },
-          success: {
-            duration: 3000,
-            iconTheme: {
-              primary: '#4ade80',
-              secondary: '#fff',
-            },
-          },
-          error: {
-            duration: 3000,
-            iconTheme: {
-              primary: '#ef4444',
-              secondary: '#fff',
-            },
-          },
-        }}
       />
     </>
   );
