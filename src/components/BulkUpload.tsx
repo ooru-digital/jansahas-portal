@@ -17,6 +17,7 @@ export default function BulkUpload({ onBack }: BulkUploadProps) {
   const [tableData, setTableData] = useState<TableData | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const handleDownloadSampleCSV = async () => {
     try {
@@ -151,6 +152,7 @@ export default function BulkUpload({ onBack }: BulkUploadProps) {
     }
 
     try {
+      setUploading(true);
       const formData = new FormData();
       formData.append('file', selectedFile);
 
@@ -161,6 +163,8 @@ export default function BulkUpload({ onBack }: BulkUploadProps) {
       });
 
       toast.success('Workers uploaded successfully');
+      // Wait for a short delay to ensure the server has processed the upload
+      await new Promise(resolve => setTimeout(resolve, 1000));
       onBack(); // This will trigger the refresh in the parent component
     } catch (error: any) {
       let errorMessage = 'Failed to upload workers';
@@ -178,6 +182,8 @@ export default function BulkUpload({ onBack }: BulkUploadProps) {
       
       setError(errorMessage);
       toast.error(errorMessage);
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -275,9 +281,19 @@ export default function BulkUpload({ onBack }: BulkUploadProps) {
                         </div>
                         <button
                           onClick={handleUpload}
-                          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                          disabled={uploading}
+                          className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+                            uploading ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}
                         >
-                          Upload Workers
+                          {uploading ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                              Uploading...
+                            </>
+                          ) : (
+                            'Upload Workers'
+                          )}
                         </button>
                       </div>
 

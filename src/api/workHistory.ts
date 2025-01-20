@@ -18,6 +18,7 @@ export interface WorkHistory {
   updated_at: string;
   isJansathi: boolean;
   number_of_working_days: number;
+  avg_daily_wages: number;
   approved_date?: string;
   rejected_date?: string;
 }
@@ -43,6 +44,7 @@ export interface CreateWorkHistoryData {
   end_date: string;
   site_id: string;
   organization_id: string;
+  avg_daily_wages: number;
 }
 
 export interface UpdateWorkHistoryData {
@@ -51,6 +53,7 @@ export interface UpdateWorkHistoryData {
   location?: string;
   start_date?: string;
   end_date?: string;
+  avg_daily_wages?: number;
 }
 
 export const createWorkHistory = async (data: CreateWorkHistoryData): Promise<WorkHistory> => {

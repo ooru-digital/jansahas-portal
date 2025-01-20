@@ -41,6 +41,18 @@ export default function WorkerManagement() {
     setShowAddWorker(false);
   };
 
+  const handleBulkUploadComplete = async () => {
+    try {
+      // Wait for a moment to ensure server has processed the upload
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      await fetchWorkers(); // Fetch updated workers list
+      setShowBulkUpload(false);
+    } catch (error) {
+      console.error('Error refreshing workers:', error);
+      toast.error('Failed to refresh workers list');
+    }
+  };
+
   const handleDeleteWorker = (workerId: number) => {
     setDeletingWorkerId(workerId);
     setShowDeleteModal(true);
@@ -86,7 +98,7 @@ export default function WorkerManagement() {
   });
 
   if (showBulkUpload) {
-    return <BulkUpload onBack={() => setShowBulkUpload(false)} />;
+    return <BulkUpload onBack={handleBulkUploadComplete} />;
   }
 
   if (showAddWorker) {

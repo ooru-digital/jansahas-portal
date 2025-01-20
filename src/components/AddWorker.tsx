@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, Camera, Upload, X } from 'lucide-react';
+import { ArrowLeft, Camera, Upload, X, ChevronRight } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import * as WorkerAPI from '../api/workers';
 import type { CreateWorkerData } from '../api/workers';
+import WorkHistoryView from './WorkHistoryView';
 
 interface AddWorkerProps {
   onBack: () => void;
@@ -10,6 +11,8 @@ interface AddWorkerProps {
 }
 
 export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
+  const [step, setStep] = useState<'worker' | 'work-history'>('worker');
+  const [createdWorkerId, setCreatedWorkerId] = useState<number | null>(null);
   const [formData, setFormData] = useState<CreateWorkerData>({
     name: '',
     phone_number: '',
@@ -141,13 +144,26 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
     }
 
     try {
-      await WorkerAPI.createWorker(formData);
+      const worker = await WorkerAPI.createWorker(formData);
       toast.success('Worker added successfully');
-      onWorkerAdded();
+      setCreatedWorkerId(worker.id);
+      setStep('work-history');
     } catch (error) {
       toast.error('Failed to add worker');
     }
   };
+
+  if (step === 'work-history' && createdWorkerId) {
+    return (
+      <WorkHistoryView 
+        workerId={createdWorkerId} 
+        onBack={() => {
+          onWorkerAdded();
+          onBack();
+        }} 
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -167,7 +183,14 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
         <div className="max-w-3xl mx-auto">
           <div className="bg-white rounded-lg shadow-sm">
             <div className="p-6">
-              <h1 className="text-2xl font-bold text-gray-900 mb-6">Add New Worker</h1>
+              <div className="flex items-center justify-between mb-6">
+                <h1 className="text-2xl font-bold text-gray-900">Add New Worker</h1>
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <span className="text-blue-600 font-medium">Worker Details</span>
+                  <ChevronRight className="h-4 w-4" />
+                  <span className="text-gray-400">Work History</span>
+                </div>
+              </div>
               
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -295,6 +318,7 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
                       onChange={handleInputChange}
                       rows={3}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
                     />
                   </div>
 
@@ -308,6 +332,7 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
                       onChange={handleInputChange}
                       rows={3}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
                     />
                   </div>
                 </div>
@@ -322,9 +347,10 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
                   >
-                    Add Worker
+                    Continue to Add Work History
+                    <ChevronRight className="h-5 w-5" />
                   </button>
                 </div>
               </form>

@@ -3,11 +3,8 @@ import { ArrowLeft, Clock, CheckSquare, XCircle, Pencil, Trash2, Award, User, Pl
 import { toast } from 'react-hot-toast';
 import * as WorkHistoryAPI from '../api/workHistory';
 import * as OrganizationsAPI from '../api/organizations';
-import * as DashboardAPI from '../api/dashboard';
 import type { WorkHistory, WorkHistoryResponse, CreateWorkHistoryData } from '../api/workHistory';
 import type { Organization, Site } from '../api/organizations';
-import type { WorkHistoryDetail } from '../api/dashboard';
-import WorkHistoryDetailModal from './WorkHistoryDetailModal';
 
 interface WorkHistoryViewProps {
   workerId: number;
@@ -22,7 +19,6 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
   const [editingHistory, setEditingHistory] = useState<WorkHistory | null>(null);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [sites, setSites] = useState<Site[]>([]);
-  const [selectedWorkHistory, setSelectedWorkHistory] = useState<WorkHistoryDetail | null>(null);
   const [formData, setFormData] = useState<CreateWorkHistoryData>({
     worker_id: workerId,
     work_name: '',
@@ -32,6 +28,7 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
     end_date: '',
     site_id: '',
     organization_id: '',
+    avg_daily_wages: 0
   });
 
   useEffect(() => {
@@ -79,7 +76,10 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => ({
+      ...prev,
+      [name]: name === 'avg_daily_wages' ? parseInt(value) || 0 : value
+    }));
   };
 
   const resetForm = () => {
@@ -92,6 +92,7 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
       end_date: '',
       site_id: '',
       organization_id: '',
+      avg_daily_wages: 0
     });
     setEditingHistory(null);
     setShowForm(false);
@@ -107,6 +108,7 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
           location: formData.location,
           start_date: formData.start_date,
           end_date: formData.end_date,
+          avg_daily_wages: formData.avg_daily_wages
         });
         toast.success('Work history updated successfully');
       } else {
@@ -131,6 +133,7 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
       end_date: history.end_date,
       site_id: history.site_id,
       organization_id: history.organization_id,
+      avg_daily_wages: history.avg_daily_wages
     });
     setShowForm(true);
   };
@@ -156,30 +159,8 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
     }
   };
 
-  const handleRowClick = async (workId: number) => {
-    try {
-      const workHistory = await DashboardAPI.getWorkHistoryDetail(workId);
-      setSelectedWorkHistory(workHistory);
-    } catch (error) {
-      toast.error('Failed to fetch work history details');
-    }
-  };
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString();
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'approved':
-        return 'bg-green-100 text-green-800';
-      case 'rejected':
-        return 'bg-red-100 text-red-800';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
   };
 
   if (loading) {
@@ -207,9 +188,8 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
     );
   }
 
-  if (!workHistoryData) {
-    return null;
-  }
+  // Check if worker has enough approved working days for VC generation
+  const hasEnoughApprovedDays = (workHistoryData?.total_no_of_approved_working_days ?? 0) >= 90;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -240,7 +220,7 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
                 <Plus className="h-5 w-5" />
                 Add Work History
               </button>
-              {workHistoryData.total_no_of_approved_working_days >= 90 && (
+              {hasEnoughApprovedDays && (
                 <button
                   onClick={handleGenerateVC}
                   className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 flex items-center gap-2"
@@ -252,11 +232,11 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             {/* Worker Info */}
             <div className="bg-white p-6 rounded-lg shadow-sm">
               <div className="flex items-center gap-4">
-                {workHistoryData.photograph ? (
+                {workHistoryData?.photograph ? (
                   <img
                     src={workHistoryData.photograph}
                     alt={workHistoryData.worker_name}
@@ -268,25 +248,32 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
                   </div>
                 )}
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900">{workHistoryData.worker_name}</h3>
+                  <h3 className="text-xl font-semibold text-gray-900">{workHistoryData?.worker_name}</h3>
                   <div className="mt-2 grid grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm text-gray-500">Age</p>
-                      <p className="text-sm font-medium text-gray-900">{workHistoryData.age}</p>
+                      <p className="text-sm font-medium text-gray-900">{workHistoryData?.age}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Gender</p>
-                      <p className="text-sm font-medium text-gray-900">{workHistoryData.gender}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Present Address</p>
-                      <p className="text-sm font-medium text-gray-900">{workHistoryData.present_address}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Permanent Address</p>
-                      <p className="text-sm font-medium text-gray-900">{workHistoryData.permanent_address}</p>
+                      <p className="text-sm font-medium text-gray-900">{workHistoryData?.gender}</p>
                     </div>
                   </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Address Information */}
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Address Information</h3>
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm text-gray-500">Present Address</p>
+                  <p className="text-sm font-medium text-gray-900">{workHistoryData?.present_address}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Permanent Address</p>
+                  <p className="text-sm font-medium text-gray-900">{workHistoryData?.permanent_address}</p>
                 </div>
               </div>
             </div>
@@ -297,16 +284,17 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-gray-500">Total Working Days</p>
-                  <p className="text-2xl font-bold text-gray-900">{workHistoryData.total_number_of_working_days || 0}</p>
+                  <p className="text-2xl font-bold text-gray-900">{workHistoryData?.total_number_of_working_days || 0}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Approved Days</p>
-                  <p className="text-2xl font-bold text-green-600">{workHistoryData.total_no_of_approved_working_days || 0}</p>
+                  <p className="text-2xl font-bold text-green-600">{workHistoryData?.total_no_of_approved_working_days || 0}</p>
                 </div>
               </div>
             </div>
           </div>
 
+          {/* Work History Form */}
           {showForm && (
             <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
               <div className="flex items-center justify-between mb-4">
@@ -397,6 +385,19 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
                 </div>
 
                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Average Daily Wages (₹)</label>
+                  <input
+                    type="number"
+                    name="avg_daily_wages"
+                    value={formData.avg_daily_wages}
+                    onChange={handleInputChange}
+                    min="0"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
                   <input
                     type="date"
@@ -439,6 +440,7 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
             </div>
           )}
 
+          {/* Work History Table */}
           <div className="bg-white rounded-lg shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
@@ -450,17 +452,14 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Working Days</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Daily Wages</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                     <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {workHistoryData.data.map((history) => (
-                    <tr 
-                      key={history.id} 
-                      className="hover:bg-gray-50 cursor-pointer"
-                      onClick={() => handleRowClick(history.id)}
-                    >
+                  {workHistoryData?.data.map((history) => (
+                    <tr key={history.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">{history.work_name}</div>
                       </td>
@@ -482,7 +481,10 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
                         <div className="text-sm font-medium text-gray-900">{history.number_of_working_days}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex flex-col items-center gap-1">
+                        <div className="text-sm font-medium text-gray-900">₹{history.avg_daily_wages}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex flex-col gap-1">
                           <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                             history.status === 'approved'
                               ? 'bg-green-100 text-green-800'
@@ -492,17 +494,17 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
                           }`}>
                             {history.status}
                           </span>
-                          {(history.status === 'approved' && history.approved_date) && (
-                            <div className="text-xs text-gray-500 flex items-center">
+                          {history.approved_date && (
+                            <span className="text-xs text-gray-500 flex items-center">
                               <Clock className="h-3 w-3 mr-1" />
                               {formatDate(history.approved_date)}
-                            </div>
+                            </span>
                           )}
-                          {(history.status === 'rejected' && history.rejected_date) && (
-                            <div className="text-xs text-gray-500 flex items-center">
+                          {history.rejected_date && (
+                            <span className="text-xs text-gray-500 flex items-center">
                               <Clock className="h-3 w-3 mr-1" />
                               {formatDate(history.rejected_date)}
-                            </div>
+                            </span>
                           )}
                         </div>
                       </td>
@@ -510,20 +512,14 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
                         {history.status === 'pending' ? (
                           <>
                             <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleEdit(history);
-                              }}
+                              onClick={() => handleEdit(history)}
                               className="text-blue-600 hover:text-blue-900 mr-4"
                               title="Edit"
                             >
                               <Pencil className="h-5 w-5" />
                             </button>
                             <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDelete(history.id);
-                              }}
+                              onClick={() => handleDelete(history.id)}
                               className="text-red-600 hover:text-red-900"
                               title="Delete"
                             >
@@ -536,9 +532,9 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
                       </td>
                     </tr>
                   ))}
-                  {!workHistoryData.data.length && (
+                  {!workHistoryData?.data.length && (
                     <tr>
-                      <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
+                      <td colSpan={9} className="px-6 py-4 text-center text-gray-500">
                         No work history found
                       </td>
                     </tr>
@@ -549,13 +545,6 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
           </div>
         </div>
       </div>
-
-      {selectedWorkHistory && (
-        <WorkHistoryDetailModal
-          workHistory={selectedWorkHistory}
-          onClose={() => setSelectedWorkHistory(null)}
-        />
-      )}
     </div>
   );
 }
