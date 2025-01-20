@@ -3,7 +3,7 @@ import { ChevronRight, Search, Plus, FileUp, History, Trash2, Pencil, MapPin } f
 import { toast, Toaster } from 'react-hot-toast';
 import * as WorkerAPI from '../api/workers';
 import type { Worker } from '../api/workers';
-import WorkHistoryModal from './WorkHistoryModal';
+import WorkHistoryView from './WorkHistoryView';
 import BulkUpload from './BulkUpload';
 import AddWorker from './AddWorker';
 import EditWorkerModal from './EditWorkerModal';
@@ -26,6 +26,7 @@ export default function WorkerManagement() {
 
   const fetchWorkers = async () => {
     try {
+      setLoading(true);
       const data = await WorkerAPI.getWorkers();
       setWorkers(data);
     } catch (error) {
@@ -69,12 +70,16 @@ export default function WorkerManagement() {
     setEditingWorker(null);
   };
 
+  const handleRowClick = (workerId: number) => {
+    setSelectedWorkerId(workerId);
+  };
+
   const filteredWorkers = workers.filter(worker => {
     if (!searchTerm) return true;
     
     const searchLower = searchTerm.toLowerCase();
     return (
-      (worker.name?.toLowerCase() || '').includes(searchLower) ||
+      worker.name.toLowerCase().includes(searchLower) ||
       (worker.phone_number || '').includes(searchTerm) ||
       (worker.present_address?.toLowerCase() || '').includes(searchLower) ||
       (worker.permanent_address?.toLowerCase() || '').includes(searchLower)
@@ -87,6 +92,10 @@ export default function WorkerManagement() {
 
   if (showAddWorker) {
     return <AddWorker onBack={() => setShowAddWorker(false)} onWorkerAdded={handleWorkerAdded} />;
+  }
+
+  if (selectedWorkerId) {
+    return <WorkHistoryView workerId={selectedWorkerId} onBack={() => setSelectedWorkerId(null)} />;
   }
 
   if (loading) {
@@ -144,7 +153,7 @@ export default function WorkerManagement() {
                     <thead className="bg-gray-50">
                       <tr>
                         <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                        <th scope="col" className="hidden md:table-cell px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Present Address</th>
+                        <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Present Address</th>
                         <th scope="col" className="hidden md:table-cell px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Permanent Address</th>
                         <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone Number</th>
                         <th scope="col" className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -152,22 +161,22 @@ export default function WorkerManagement() {
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                       {filteredWorkers.map((worker) => (
-                        <tr key={worker.id} className="hover:bg-gray-50">
+                        <tr 
+                          key={worker.id} 
+                          className="hover:bg-gray-50 cursor-pointer"
+                          onClick={() => handleRowClick(worker.id)}
+                        >
                           <td className="px-3 py-4">
                             <div className="text-sm font-medium text-gray-900">{worker.name}</div>
-                            <div className="md:hidden mt-1 space-y-1">
-                              <div className="flex items-center text-xs text-gray-500">
-                                <MapPin className="h-3 w-3 mr-1" />
-                                Present: {worker.present_address || 'N/A'}
-                              </div>
+                          </td>
+                          <td className="px-3 py-4">
+                            <div className="text-sm text-gray-500">{worker.present_address || 'N/A'}</div>
+                            <div className="md:hidden mt-1">
                               <div className="flex items-center text-xs text-gray-500">
                                 <MapPin className="h-3 w-3 mr-1" />
                                 Permanent: {worker.permanent_address || 'N/A'}
                               </div>
                             </div>
-                          </td>
-                          <td className="hidden md:table-cell px-3 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-500">{worker.present_address || 'N/A'}</div>
                           </td>
                           <td className="hidden md:table-cell px-3 py-4 whitespace-nowrap">
                             <div className="text-sm text-gray-500">{worker.permanent_address || 'N/A'}</div>
@@ -178,21 +187,30 @@ export default function WorkerManagement() {
                           <td className="px-3 py-4 whitespace-nowrap">
                             <div className="flex items-center justify-center space-x-2">
                               <button
-                                onClick={() => handleEditWorker(worker)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEditWorker(worker);
+                                }}
                                 className="text-blue-600 hover:text-blue-900 p-1 rounded-full hover:bg-blue-50"
                                 title="Edit Worker"
                               >
                                 <Pencil className="h-5 w-5" />
                               </button>
                               <button
-                                onClick={() => setSelectedWorkerId(worker.id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRowClick(worker.id);
+                                }}
                                 className="text-purple-600 hover:text-purple-900 p-1 rounded-full hover:bg-purple-50"
                                 title="Work History"
                               >
                                 <History className="h-5 w-5" />
                               </button>
                               <button
-                                onClick={() => handleDeleteWorker(worker.id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteWorker(worker.id);
+                                }}
                                 className="text-red-600 hover:text-red-900 p-1 rounded-full hover:bg-red-50"
                                 title="Delete Worker"
                               >
@@ -217,13 +235,6 @@ export default function WorkerManagement() {
           </div>
         </div>
       </div>
-
-      {selectedWorkerId && (
-        <WorkHistoryModal
-          workerId={selectedWorkerId}
-          onClose={() => setSelectedWorkerId(null)}
-        />
-      )}
 
       {editingWorker && (
         <EditWorkerModal

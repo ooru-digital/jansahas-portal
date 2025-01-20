@@ -8,6 +8,9 @@ export interface Worker {
   present_address: string;
   permanent_address: string;
   organization_id: string;
+  age: string;
+  gender: string;
+  photograph: File | null;
 }
 
 export interface CreateWorkerData {
@@ -17,6 +20,9 @@ export interface CreateWorkerData {
   present_address: string;
   permanent_address: string;
   organization_id: string;
+  age: string;
+  gender: string;
+  photograph: File | null;
 }
 
 export interface UpdateWorkerData {
@@ -25,6 +31,8 @@ export interface UpdateWorkerData {
   present_address?: string;
   permanent_address?: string;
   organization_id?: string;
+  age?: string;
+  gender?: string;
 }
 
 export const createWorker = async (data: CreateWorkerData): Promise<Worker> => {
