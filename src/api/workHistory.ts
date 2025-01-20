@@ -10,6 +10,10 @@ export interface WorkHistory {
   status?: string;
   worker: string;
   site: string;
+  site_id: string;
+  organization_id: string;
+  organization_name: string;
+  site_name: string;
   created_at: string;
   updated_at: string;
   isJansathi: boolean;

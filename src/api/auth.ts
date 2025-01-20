@@ -14,3 +14,8 @@ export const login = async (credentials: LoginCredentials): Promise<AuthTokens> 
   const response = await api.post('/login/', credentials);
   return response.data;
 };
+
+export const refreshToken = async (refresh: string): Promise<AuthTokens> => {
+  const response = await api.post('/token/refresh/', { refresh });
+  return response.data;
+};

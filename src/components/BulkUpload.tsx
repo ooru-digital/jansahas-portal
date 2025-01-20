@@ -9,7 +9,11 @@ interface TableData {
   rows: string[][];
 }
 
-export default function BulkUpload({ onBack }: { onBack: () => void }) {
+interface BulkUploadProps {
+  onBack: () => void;
+}
+
+export default function BulkUpload({ onBack }: BulkUploadProps) {
   const [tableData, setTableData] = useState<TableData | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -157,15 +161,21 @@ export default function BulkUpload({ onBack }: { onBack: () => void }) {
       });
 
       toast.success('Workers uploaded successfully');
-      onBack();
-    } catch (error) {
+      onBack(); // This will trigger the refresh in the parent component
+    } catch (error: any) {
       let errorMessage = 'Failed to upload workers';
-      if (error instanceof Error) {
+      
+      // Check for error response with error message
+      if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.detail) {
+        errorMessage = error.response.data.detail;
+      } else if (error.message) {
         errorMessage = error.message;
-      } else if (typeof error === 'object' && error !== null && 'response' in error) {
-        const axiosError = error as { response?: { data?: { message?: string; detail?: string; }; }; };
-        errorMessage = axiosError.response?.data?.message || axiosError.response?.data?.detail || errorMessage;
       }
+      
       setError(errorMessage);
       toast.error(errorMessage);
     }
