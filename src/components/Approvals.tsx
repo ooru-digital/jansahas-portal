@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Clock, CheckCircle2, XCircle, Check, X } from 'lucide-react';
+import { Clock, CheckCircle2, XCircle, Check, X, User } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import { getPendingApprovals, bulkUpdateApprovalStatus, WorkDetail } from '../api/dashboard';
+import { getPendingApprovals, bulkUpdateApprovalStatus, getWorkHistoryDetail, WorkDetail, WorkHistoryDetail } from '../api/dashboard';
+import WorkHistoryDetailModal from './WorkHistoryDetailModal';
 
 export default function Approvals() {
   const [pendingApprovals, setPendingApprovals] = useState<WorkDetail[]>([]);
@@ -10,6 +11,7 @@ export default function Approvals() {
   const [processingApproval, setProcessingApproval] = useState<number | null>(null);
   const [selectedApprovals, setSelectedApprovals] = useState<Set<number>>(new Set());
   const [processingBulk, setProcessingBulk] = useState(false);
+  const [selectedWorkHistory, setSelectedWorkHistory] = useState<WorkHistoryDetail | null>(null);
 
   useEffect(() => {
     fetchApprovals();
@@ -99,6 +101,15 @@ export default function Approvals() {
     return pendingApprovals.filter(approval => !approval.isJansathi);
   };
 
+  const handleRowClick = async (workId: number) => {
+    try {
+      const workHistory = await getWorkHistoryDetail(workId);
+      setSelectedWorkHistory(workHistory);
+    } catch (error) {
+      toast.error('Failed to fetch work history details');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -127,132 +138,159 @@ export default function Approvals() {
   const selectableCount = getSelectableApprovals().length;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Pending Approvals</h1>
-          {selectedApprovals.size > 0 && (
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-gray-600">
-                {selectedApprovals.size} selected
-              </span>
-              <button
-                onClick={() => handleBulkAction('approved')}
-                disabled={processingBulk}
-                className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Check className="h-5 w-5 mr-2" />
-                Approve Selected
-              </button>
-              <button
-                onClick={() => handleBulkAction('rejected')}
-                disabled={processingBulk}
-                className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <X className="h-5 w-5 mr-2" />
-                Reject Selected
-              </button>
-            </div>
-          )}
-        </div>
+    <>
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-3xl font-bold text-gray-900">Pending Approvals</h1>
+            {selectedApprovals.size > 0 && (
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-gray-600">
+                  {selectedApprovals.size} selected
+                </span>
+                <button
+                  onClick={() => handleBulkAction('approved')}
+                  disabled={processingBulk}
+                  className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Check className="h-5 w-5 mr-2" />
+                  Approve Selected
+                </button>
+                <button
+                  onClick={() => handleBulkAction('rejected')}
+                  disabled={processingBulk}
+                  className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <X className="h-5 w-5 mr-2" />
+                  Reject Selected
+                </button>
+              </div>
+            )}
+          </div>
 
-        <div className="bg-white rounded-xl shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left">
-                    {selectableCount > 0 && (
-                      <input
-                        type="checkbox"
-                        checked={selectedApprovals.size === selectableCount && selectableCount > 0}
-                        onChange={toggleSelectAll}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                    )}
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Worker</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Work Details</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Site</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Working Days</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {pendingApprovals.map((approval) => (
-                  <tr key={approval.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      {!approval.isJansathi && (
+          <div className="bg-white rounded-xl shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left">
+                      {selectableCount > 0 && (
                         <input
                           type="checkbox"
-                          checked={selectedApprovals.has(approval.id)}
-                          onChange={() => toggleSelect(approval.id)}
+                          checked={selectedApprovals.size === selectableCount && selectableCount > 0}
+                          onChange={toggleSelectAll}
                           className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                         />
                       )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{approval.worker_name}</div>
-                      <div className="text-sm text-gray-500">{approval.location}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{approval.work_name}</div>
-                      <div className="text-sm text-gray-500">{approval.work_type}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-500">{approval.site}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-500">
-                        {new Date(approval.start_date).toLocaleDateString()} - {new Date(approval.end_date).toLocaleDateString()}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{approval.number_of_working_days || 0}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                        {approval.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right space-x-3">
-                      {!approval.isJansathi && (
-                        <>
-                          <button
-                            onClick={() => handleApprovalAction(approval.id, 'approved')}
-                            disabled={processingApproval === approval.id}
-                            className={`text-green-600 hover:text-green-900 ${processingApproval === approval.id ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            title="Approve"
-                          >
-                            <CheckCircle2 className="h-5 w-5 inline" />
-                          </button>
-                          <button
-                            onClick={() => handleApprovalAction(approval.id, 'rejected')}
-                            disabled={processingApproval === approval.id}
-                            className={`text-red-600 hover:text-red-900 ${processingApproval === approval.id ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            title="Reject"
-                          >
-                            <XCircle className="h-5 w-5 inline" />
-                          </button>
-                        </>
-                      )}
-                    </td>
+                    </th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Photo</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Worker</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Work Details</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Site</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Working Days</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
-                ))}
-                {pendingApprovals.length === 0 && (
-                  <tr>
-                    <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
-                      No pending approvals
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {pendingApprovals.map((approval) => (
+                    <tr 
+                      key={approval.id} 
+                      className="hover:bg-gray-50 cursor-pointer"
+                      onClick={() => handleRowClick(approval.id)}
+                    >
+                      <td className="px-6 py-4" onClick={e => e.stopPropagation()}>
+                        {!approval.isJansathi && (
+                          <input
+                            type="checkbox"
+                            checked={selectedApprovals.has(approval.id)}
+                            onChange={() => toggleSelect(approval.id)}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        {approval.photograph ? (
+                          <img
+                            src={approval.photograph}
+                            alt={approval.worker_name}
+                            className="h-10 w-10 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center">
+                            <User className="h-6 w-6 text-gray-400" />
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-medium text-gray-900">{approval.worker_name}</div>
+                        <div className="text-sm text-gray-500">{approval.location}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">{approval.work_name}</div>
+                        <div className="text-sm text-gray-500">{approval.work_type}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-500">{approval.site}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-500">
+                          {new Date(approval.start_date).toLocaleDateString()} - {new Date(approval.end_date).toLocaleDateString()}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">{approval.number_of_working_days || 0}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                          {approval.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right space-x-3" onClick={e => e.stopPropagation()}>
+                        {!approval.isJansathi && (
+                          <>
+                            <button
+                              onClick={() => handleApprovalAction(approval.id, 'approved')}
+                              disabled={processingApproval === approval.id}
+                              className={`text-green-600 hover:text-green-900 ${processingApproval === approval.id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                              title="Approve"
+                            >
+                              <CheckCircle2 className="h-5 w-5 inline" />
+                            </button>
+                            <button
+                              onClick={() => handleApprovalAction(approval.id, 'rejected')}
+                              disabled={processingApproval === approval.id}
+                              className={`text-red-600 hover:text-red-900 ${processingApproval === approval.id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                              title="Reject"
+                            >
+                              <XCircle className="h-5 w-5 inline" />
+                            </button>
+                          </>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                  {pendingApprovals.length === 0 && (
+                    <tr>
+                      <td colSpan={9} className="px-6 py-4 text-center text-gray-500">
+                        No pending approvals
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+
+      {selectedWorkHistory && (
+        <WorkHistoryDetailModal
+          workHistory={selectedWorkHistory}
+          onClose={() => setSelectedWorkHistory(null)}
+        />
+      )}
+    </>
   );
 }

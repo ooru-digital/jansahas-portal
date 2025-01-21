@@ -42,39 +42,53 @@ export default function WorkHistoryDetailModal({ workHistory, onClose }: WorkHis
         {/* Content */}
         <div className="p-6 overflow-y-auto">
           {/* Worker Information */}
-          <div className="flex items-start gap-6 mb-8">
-            {workHistory.photograph ? (
-              <img
-                src={workHistory.photograph}
-                alt={workHistory.worker_name}
-                className="w-24 h-24 rounded-lg object-cover"
-              />
-            ) : (
-              <div className="w-24 h-24 rounded-lg bg-gray-100 flex items-center justify-center">
-                <User className="h-12 w-12 text-gray-400" />
+          <div className="bg-gray-50 p-4 rounded-lg mb-6">
+            <h3 className="text-lg font-medium mb-4 flex items-center gap-2">
+              <User className="h-5 w-5 text-gray-500" />
+              Worker Information
+            </h3>
+            <div className="flex gap-6">
+              <div className="flex-shrink-0 flex items-center">
+                {workHistory.photograph ? (
+                  <img
+                    src={workHistory.photograph}
+                    alt={workHistory.worker_name}
+                    className="w-32 h-32 rounded-lg object-cover"
+                  />
+                ) : (
+                  <div className="w-32 h-32 rounded-lg bg-gray-100 flex items-center justify-center">
+                    <User className="h-16 w-16 text-gray-400" />
+                  </div>
+                )}
               </div>
-            )}
-            <div className="flex-1">
-              <h3 className="text-lg font-medium mb-4 flex items-center gap-2">
-                <User className="h-5 w-5 text-gray-500" />
-                Worker Information
-              </h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-gray-500">Name</p>
-                  <p className="font-medium">{workHistory.worker_name}</p>
+              <div className="flex-1">
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <p className="text-sm text-gray-500">Name</p>
+                    <p className="font-medium">{workHistory.worker_name}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Phone Number</p>
+                    <p className="font-medium">{workHistory.phone_number || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Age</p>
+                    <p className="font-medium">{workHistory.age || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Gender</p>
+                    <p className="font-medium">{workHistory.sex || '-'}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-500">Phone Number</p>
-                  <p className="font-medium">{workHistory.phone_number}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Present Address</p>
-                  <p className="font-medium">{workHistory.present_address}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Permanent Address</p>
-                  <p className="font-medium">{workHistory.permanent_address}</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-500">Present Address</p>
+                    <p className="font-medium">{workHistory.present_address || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Permanent Address</p>
+                    <p className="font-medium">{workHistory.permanent_address || '-'}</p>
+                  </div>
                 </div>
               </div>
             </div>

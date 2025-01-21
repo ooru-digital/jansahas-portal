@@ -7,7 +7,7 @@ export interface WorkHistory {
   location: string;
   start_date: string;
   end_date: string;
-  status?: string;
+  status: string;
   worker: string;
   site: string;
   site_id: string;
@@ -31,7 +31,7 @@ export interface WorkHistoryResponse {
   permanent_address: string;
   total_no_of_approved_working_days: number;
   age: string;
-  gender: string;
+  sex: string;
   photograph: string | null;
 }
 

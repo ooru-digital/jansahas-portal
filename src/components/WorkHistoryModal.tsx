@@ -31,6 +31,7 @@ export default function WorkHistoryModal({ workerId, onClose }: WorkHistoryModal
     end_date: '',
     site_id: '',
     organization_id: '',
+    avg_daily_wages: 0
   });
 
   useEffect(() => {
@@ -78,7 +79,10 @@ export default function WorkHistoryModal({ workerId, onClose }: WorkHistoryModal
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => ({
+      ...prev,
+      [name]: name === 'avg_daily_wages' ? parseFloat(value) || 0 : value
+    }));
   };
 
   const resetForm = () => {
@@ -91,6 +95,7 @@ export default function WorkHistoryModal({ workerId, onClose }: WorkHistoryModal
       end_date: '',
       site_id: '',
       organization_id: '',
+      avg_daily_wages: 0
     });
     setEditingHistory(null);
     setShowForm(false);
@@ -177,7 +182,8 @@ export default function WorkHistoryModal({ workerId, onClose }: WorkHistoryModal
             </h2>
           </div>
           <div className="flex items-center gap-4">
-            {workHistoryData?.total_no_of_approved_working_days >= 90 && (
+            {workHistoryData?.total_no_of_approved_working_days && 
+             workHistoryData.total_no_of_approved_working_days >= 90 && (
               <button
                 onClick={handleGenerateVC}
                 className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 flex items-center gap-2"
@@ -320,6 +326,20 @@ export default function WorkHistoryModal({ workerId, onClose }: WorkHistoryModal
                 </div>
 
                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Average Daily Wages (₹)</label>
+                  <input
+                    type="number"
+                    name="avg_daily_wages"
+                    value={formData.avg_daily_wages}
+                    onChange={handleInputChange}
+                    min="0"
+                    step="0.01"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
                   <input
                     type="date"
@@ -373,6 +393,7 @@ export default function WorkHistoryModal({ workerId, onClose }: WorkHistoryModal
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Working Days</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Daily Wages</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                     <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
@@ -396,6 +417,9 @@ export default function WorkHistoryModal({ workerId, onClose }: WorkHistoryModal
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">{history.number_of_working_days}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">₹{history.avg_daily_wages}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex flex-col gap-1">
@@ -433,7 +457,7 @@ export default function WorkHistoryModal({ workerId, onClose }: WorkHistoryModal
                   ))}
                   {!workHistoryData?.data.length && (
                     <tr>
-                      <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
+                      <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
                         No work history found
                       </td>
                     </tr>
