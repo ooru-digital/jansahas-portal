@@ -7,7 +7,7 @@ export interface DashboardCounts {
   total_workers: number;
   total_sites: number;
   total_organizations: number;
-  total_rejections?: number;
+  rejected_work_count?: number;
 }
 
 export interface WorkDetail {

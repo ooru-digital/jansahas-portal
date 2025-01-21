@@ -18,9 +18,10 @@ export default function EditWorkerModal({ worker, isOpen, onClose, onWorkerUpdat
     present_address: worker.present_address,
     permanent_address: worker.permanent_address,
     age: worker.age,
-    gender: worker.gender,
+    gender: worker.gender.charAt(0).toUpperCase() + worker.gender.slice(1).toLowerCase(),
     organization_id: worker.organization_id
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen) return null;
 
@@ -35,14 +36,20 @@ export default function EditWorkerModal({ worker, isOpen, onClose, onWorkerUpdat
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (isSubmitting) return;
+
     try {
+      setIsSubmitting(true);
       await WorkerAPI.updateWorker(worker.id, formData);
       toast.success('Worker updated successfully');
       onWorkerUpdated();
       onClose();
     } catch (error) {
-      // Error will be handled by axios interceptor
+      // The error will be handled by the axios interceptor which will show the toast
+      // We just need to log it for debugging purposes
       console.error('Update failed:', error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -98,15 +105,14 @@ export default function EditWorkerModal({ worker, isOpen, onClose, onWorkerUpdat
               </label>
               <select
                 name="gender"
-                value={formData.gender || ''}
+                value={formData.gender}
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
               >
-                <option value="">Select Gender</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Others">Others</option>
               </select>
             </div>
 
@@ -160,14 +166,23 @@ export default function EditWorkerModal({ worker, isOpen, onClose, onWorkerUpdat
               type="button"
               onClick={onClose}
               className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+              disabled={isSubmitting}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+              className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isSubmitting}
             >
-              Update Worker
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  Updating...
+                </>
+              ) : (
+                'Update Worker'
+              )}
             </button>
           </div>
         </form>

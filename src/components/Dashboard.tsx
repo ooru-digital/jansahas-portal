@@ -254,9 +254,9 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           <div className="bg-white rounded-xl shadow-sm p-6">
             <div className="flex items-center justify-between">
-              <div className="flex-1">
+              <div className="flex-1 text-center">
                 <p className="text-sm font-medium text-gray-600">Pending Approvals</p>
-                <p className="text-2xl font-bold text-gray-900 text-center mt-1">{counts?.pending_approval_count || 0}</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">{counts?.pending_approval_count || 0}</p>
               </div>
               <Clock className="h-10 w-10 text-yellow-600 flex-shrink-0" />
             </div>
@@ -264,20 +264,20 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
 
           <div className="bg-white rounded-xl shadow-sm p-6">
             <div className="flex items-center justify-between">
-              <div className="flex-1">
+              <div className="flex-1 text-center">
                 <p className="text-sm font-medium text-gray-600">Approved Works</p>
-                <p className="text-2xl font-bold text-gray-900 text-center mt-1">{counts?.approved_work_count || 0}</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">{counts?.approved_work_count || 0}</p>
               </div>
               <CheckSquare className="h-10 w-10 text-green-600 flex-shrink-0" />
             </div>
           </div>
 
-          {counts?.total_rejections !== undefined && (
+          {counts?.rejected_work_count !== undefined && (
             <div className="bg-white rounded-xl shadow-sm p-6">
               <div className="flex items-center justify-between">
-                <div className="flex-1">
+                <div className="flex-1 text-center">
                   <p className="text-sm font-medium text-gray-600">Total Rejections</p>
-                  <p className="text-2xl font-bold text-gray-900 text-center mt-1">{counts.total_rejections}</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-1">{counts.rejected_work_count}</p>
                 </div>
                 <XCircle className="h-10 w-10 text-red-600 flex-shrink-0" />
               </div>
@@ -291,7 +291,7 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <p className="text-sm font-medium text-gray-600">Total Sites</p>
-                <p className="text-2xl font-bold text-gray-900 text-center mt-1">{counts?.total_sites || 0}</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">{counts?.total_sites || 0}</p>
               </div>
               <Building2 className="h-10 w-10 text-blue-600 flex-shrink-0" />
             </div>
@@ -304,7 +304,7 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <p className="text-sm font-medium text-gray-600">Total Organizations</p>
-                <p className="text-2xl font-bold text-gray-900 text-center mt-1">{counts?.total_organizations || 0}</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">{counts?.total_organizations || 0}</p>
               </div>
               <Building2 className="h-10 w-10 text-orange-600 flex-shrink-0" />
             </div>
@@ -312,9 +312,9 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
 
           <div className="bg-white rounded-xl shadow-sm p-6">
             <div className="flex items-center justify-between">
-              <div className="flex-1">
+              <div className="flex-1 text-center">
                 <p className="text-sm font-medium text-gray-600">Authorized Signatories</p>
-                <p className="text-2xl font-bold text-gray-900 text-center mt-1">{counts?.total_authorized_signatories || 0}</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">{counts?.total_authorized_signatories || 0}</p>
               </div>
               <Users className="h-10 w-10 text-purple-600 flex-shrink-0" />
             </div>
@@ -322,12 +322,12 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
 
           <button
             onClick={() => onNavigate('workers')}
-            className="bg-white rounded-xl shadow-sm p-6 hover:bg-gray-50 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            className="bg-white rounded-xl shadow-sm p-6 hover:bg-gray-50 transition-colors duration-200"
           >
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <p className="text-sm font-medium text-gray-600">Total Workers</p>
-                <p className="text-2xl font-bold text-gray-900 text-center mt-1">{counts?.total_workers || 0}</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">{counts?.total_workers || 0}</p>
               </div>
               <UserRound className="h-10 w-10 text-indigo-600 flex-shrink-0" />
             </div>
