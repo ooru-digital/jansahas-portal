@@ -9,7 +9,7 @@ export interface Site {
 }
 
 export const getAllSites = async (): Promise<Site[]> => {
-  const response = await api.get('/sites/');
+  const response = await api.get('/site/all/');
   return response.data;
 };
 

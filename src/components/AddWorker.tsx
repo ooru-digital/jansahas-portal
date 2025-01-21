@@ -1,17 +1,22 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, Camera, Upload, X, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Camera, Upload, X, ChevronRight, Plus, Check } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import * as WorkerAPI from '../api/workers';
+import * as WorkHistoryAPI from '../api/workHistory';
+import * as OrganizationsAPI from '../api/organizations';
 import type { CreateWorkerData } from '../api/workers';
-import WorkHistoryView from './WorkHistoryView';
+import type { CreateWorkHistoryData } from '../api/workHistory';
+import type { Organization, Site } from '../api/organizations';
 
 interface AddWorkerProps {
   onBack: () => void;
   onWorkerAdded: () => void;
 }
 
+type Step = 'worker' | 'work-history';
+
 export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
-  const [step, setStep] = useState<'worker' | 'work-history'>('worker');
+  const [step, setStep] = useState<Step>('worker');
   const [createdWorkerId, setCreatedWorkerId] = useState<number | null>(null);
   const [formData, setFormData] = useState<CreateWorkerData>({
     name: '',
@@ -24,6 +29,20 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
     photograph: null,
   });
 
+  const [workHistoryData, setWorkHistoryData] = useState<CreateWorkHistoryData>({
+    worker_id: 0,
+    work_name: '',
+    work_type: '',
+    location: '',
+    start_date: '',
+    end_date: '',
+    site_id: '',
+    organization_id: '',
+    avg_daily_wages: 0,
+  });
+
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [sites, setSites] = useState<Site[]>([]);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [showCamera, setShowCamera] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
@@ -35,13 +54,38 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
     if (showCamera && !stream) {
       initializeCamera();
     }
+    fetchOrganizations();
   }, [showCamera]);
+
+  useEffect(() => {
+    if (workHistoryData.organization_id) {
+      fetchSites(workHistoryData.organization_id);
+    }
+  }, [workHistoryData.organization_id]);
 
   useEffect(() => {
     return () => {
       stopCamera();
     };
   }, []);
+
+  const fetchOrganizations = async () => {
+    try {
+      const data = await OrganizationsAPI.getOrganizations();
+      setOrganizations(data);
+    } catch (error) {
+      toast.error('Failed to fetch organizations');
+    }
+  };
+
+  const fetchSites = async (organizationId: string) => {
+    try {
+      const data = await OrganizationsAPI.getSitesByOrganization(organizationId);
+      setSites(data);
+    } catch (error) {
+      toast.error('Failed to fetch sites');
+    }
+  };
 
   const initializeCamera = async () => {
     try {
@@ -66,10 +110,17 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: name === 'age' ? (value === '' ? '' : value) : value
-    }));
+    if (step === 'worker') {
+      setFormData(prev => ({
+        ...prev,
+        [name]: name === 'age' ? (value === '' ? '' : value) : value
+      }));
+    } else {
+      setWorkHistoryData(prev => ({
+        ...prev,
+        [name]: name === 'avg_daily_wages' ? parseFloat(value) || 0 : value
+      }));
+    }
   };
 
   const startCamera = () => {
@@ -90,21 +141,17 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
       const canvas = photoRef.current;
       const context = canvas.getContext('2d');
 
-      // Set canvas dimensions to match video aspect ratio
       const { videoWidth, videoHeight } = video;
       const aspectRatio = videoWidth / videoHeight;
       
-      // Target width and height for the captured photo
       const targetWidth = 800;
       const targetHeight = targetWidth / aspectRatio;
       
       canvas.width = targetWidth;
       canvas.height = targetHeight;
 
-      // Draw the video frame to the canvas
       context?.drawImage(video, 0, 0, targetWidth, targetHeight);
 
-      // Convert canvas to blob
       canvas.toBlob((blob) => {
         if (blob) {
           const file = new File([blob], 'photo.jpg', { type: 'image/jpeg' });
@@ -134,10 +181,9 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
     setFormData(prev => ({ ...prev, photograph: null }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleWorkerSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate age
     if (!formData.age || parseInt(formData.age) < 18 || parseInt(formData.age) > 100) {
       toast.error('Please enter a valid age between 18 and 100');
       return;
@@ -147,23 +193,339 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
       const worker = await WorkerAPI.createWorker(formData);
       toast.success('Worker added successfully');
       setCreatedWorkerId(worker.id);
+      setWorkHistoryData(prev => ({ ...prev, worker_id: worker.id }));
       setStep('work-history');
     } catch (error) {
       toast.error('Failed to add worker');
     }
   };
 
-  if (step === 'work-history' && createdWorkerId) {
-    return (
-      <WorkHistoryView 
-        workerId={createdWorkerId} 
-        onBack={() => {
-          onWorkerAdded();
-          onBack();
-        }} 
-      />
-    );
-  }
+  const handleWorkHistorySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await WorkHistoryAPI.createWorkHistory(workHistoryData);
+      toast.success('Work history added successfully');
+      onWorkerAdded();
+      onBack();
+    } catch (error) {
+      toast.error('Failed to add work history');
+    }
+  };
+
+  const renderWorkerForm = () => (
+    <form onSubmit={handleWorkerSubmit} className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Full Name <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            name="name"
+            value={formData.name}
+            onChange={handleInputChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Age <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="number"
+            name="age"
+            value={formData.age}
+            onChange={handleInputChange}
+            min="18"
+            max="100"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Gender <span className="text-red-500">*</span>
+          </label>
+          <select
+            name="gender"
+            value={formData.gender}
+            onChange={handleInputChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            required
+          >
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Others">Others</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Phone Number <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="tel"
+            name="phone_number"
+            value={formData.phone_number}
+            onChange={handleInputChange}
+            pattern="[0-9]{10}"
+            title="Please enter a valid 10-digit phone number"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Photograph
+          </label>
+          <div className="mt-1 flex items-center gap-4">
+            {!photoPreview && !showCamera && (
+              <>
+                <button
+                  type="button"
+                  onClick={startCamera}
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  <Camera className="h-5 w-5 mr-2" />
+                  Take Photo
+                </button>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  <Upload className="h-5 w-5 mr-2" />
+                  Upload Photo
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+              </>
+            )}
+            {photoPreview && (
+              <div className="relative">
+                <img
+                  src={photoPreview}
+                  alt="Preview"
+                  className="h-32 w-32 object-cover rounded-lg"
+                />
+                <button
+                  type="button"
+                  onClick={clearPhoto}
+                  className="absolute -top-2 -right-2 p-1 bg-red-100 rounded-full text-red-600 hover:bg-red-200"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Present Address <span className="text-red-500">*</span>
+          </label>
+          <textarea
+            name="present_address"
+            value={formData.present_address}
+            onChange={handleInputChange}
+            rows={3}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            required
+          />
+        </div>
+
+        <div className="md:col-span-2">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Permanent Address <span className="text-red-500">*</span>
+          </label>
+          <textarea
+            name="permanent_address"
+            value={formData.permanent_address}
+            onChange={handleInputChange}
+            rows={3}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            required
+          />
+        </div>
+      </div>
+
+      <div className="flex justify-end gap-4">
+        <button
+          type="button"
+          onClick={onBack}
+          className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+        >
+          Continue to Add Work History
+          <ChevronRight className="h-5 w-5" />
+        </button>
+      </div>
+    </form>
+  );
+
+  const renderWorkHistoryForm = () => (
+    <form onSubmit={handleWorkHistorySubmit} className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Organization <span className="text-red-500">*</span>
+          </label>
+          <select
+            name="organization_id"
+            value={workHistoryData.organization_id}
+            onChange={handleInputChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            required
+          >
+            <option value="">Select Organization</option>
+            {organizations.map(org => (
+              <option key={org.id} value={org.id}>{org.name}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Site <span className="text-red-500">*</span>
+          </label>
+          <select
+            name="site_id"
+            value={workHistoryData.site_id}
+            onChange={handleInputChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            required
+            disabled={!workHistoryData.organization_id}
+          >
+            <option value="">Select Site</option>
+            {sites.map(site => (
+              <option key={site.id} value={site.id}>{site.name}</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Work Name <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            name="work_name"
+            value={workHistoryData.work_name}
+            onChange={handleInputChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Work Type <span className="text-red-500">*</span>
+          </label>
+          <select
+            name="work_type"
+            value={workHistoryData.work_type}
+            onChange={handleInputChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            required
+          >
+            <option value="">Select Work Type</option>
+            <option value="Full-time">Full-time</option>
+            <option value="Part-time">Part-time</option>
+            <option value="Contract">Contract</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Location <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            name="location"
+            value={workHistoryData.location}
+            onChange={handleInputChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Average Daily Wages (₹) <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="number"
+            name="avg_daily_wages"
+            value={workHistoryData.avg_daily_wages}
+            onChange={handleInputChange}
+            min="0"
+            step="0.01"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Start Date <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="date"
+            name="start_date"
+            value={workHistoryData.start_date}
+            onChange={handleInputChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            End Date <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="date"
+            name="end_date"
+            value={workHistoryData.end_date}
+            onChange={handleInputChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            required
+          />
+        </div>
+      </div>
+
+      <div className="flex justify-end gap-4">
+        <button
+          type="button"
+          onClick={() => setStep('worker')}
+          className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+        >
+          Back
+        </button>
+        <button
+          type="submit"
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+        >
+          <Plus className="h-5 w-5" />
+          Add Work History
+        </button>
+      </div>
+    </form>
+  );
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -186,174 +548,17 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
               <div className="flex items-center justify-between mb-6">
                 <h1 className="text-2xl font-bold text-gray-900">Add New Worker</h1>
                 <div className="flex items-center gap-2 text-sm text-gray-500">
-                  <span className="text-blue-600 font-medium">Worker Details</span>
+                  <span className={step === 'worker' ? 'text-blue-600 font-medium' : 'text-gray-400'}>
+                    Worker Details
+                  </span>
                   <ChevronRight className="h-4 w-4" />
-                  <span className="text-gray-400">Work History</span>
+                  <span className={step === 'work-history' ? 'text-blue-600 font-medium' : 'text-gray-400'}>
+                    Work History
+                  </span>
                 </div>
               </div>
               
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Full Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Age <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      name="age"
-                      value={formData.age}
-                      onChange={handleInputChange}
-                      min="18"
-                      max="100"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Gender <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      name="gender"
-                      value={formData.gender}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      required
-                    >
-                      <option value="Male">Male</option>
-                      <option value="Female">Female</option>
-                      <option value="Others">Others</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Phone Number <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="tel"
-                      name="phone_number"
-                      value={formData.phone_number}
-                      onChange={handleInputChange}
-                      pattern="[0-9]{10}"
-                      title="Please enter a valid 10-digit phone number"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Photograph
-                    </label>
-                    <div className="mt-1 flex items-center gap-4">
-                      {!photoPreview && !showCamera && (
-                        <>
-                          <button
-                            type="button"
-                            onClick={startCamera}
-                            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                          >
-                            <Camera className="h-5 w-5 mr-2" />
-                            Take Photo
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => fileInputRef.current?.click()}
-                            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                          >
-                            <Upload className="h-5 w-5 mr-2" />
-                            Upload Photo
-                          </button>
-                          <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept="image/*"
-                            onChange={handleFileUpload}
-                            className="hidden"
-                          />
-                        </>
-                      )}
-                      {photoPreview && (
-                        <div className="relative">
-                          <img
-                            src={photoPreview}
-                            alt="Preview"
-                            className="h-32 w-32 object-cover rounded-lg"
-                          />
-                          <button
-                            type="button"
-                            onClick={clearPhoto}
-                            className="absolute -top-2 -right-2 p-1 bg-red-100 rounded-full text-red-600 hover:bg-red-200"
-                          >
-                            <X className="h-4 w-4" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Present Address <span className="text-red-500">*</span>
-                    </label>
-                    <textarea
-                      name="present_address"
-                      value={formData.present_address}
-                      onChange={handleInputChange}
-                      rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      required
-                    />
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Permanent Address <span className="text-red-500">*</span>
-                    </label>
-                    <textarea
-                      name="permanent_address"
-                      value={formData.permanent_address}
-                      onChange={handleInputChange}
-                      rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="flex justify-end gap-4">
-                  <button
-                    type="button"
-                    onClick={onBack}
-                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
-                  >
-                    Continue to Add Work History
-                    <ChevronRight className="h-5 w-5" />
-                  </button>
-                </div>
-              </form>
+              {step === 'worker' ? renderWorkerForm() : renderWorkHistoryForm()}
             </div>
           </div>
         </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Clock, CheckSquare, XCircle, Pencil, Trash2, Award, User, Plus } from 'lucide-react';
+import { ArrowLeft, Clock, CheckSquare, XCircle, Pencil, Trash2, Award, User, Plus, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import * as WorkHistoryAPI from '../api/workHistory';
 import * as OrganizationsAPI from '../api/organizations';
@@ -40,6 +40,12 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
     fetchOrganizations();
   }, [workerId]);
 
+  useEffect(() => {
+    if (formData.organization_id) {
+      fetchSites(formData.organization_id);
+    }
+  }, [formData.organization_id]);
+
   const fetchWorkHistory = async () => {
     try {
       setLoading(true);
@@ -64,12 +70,6 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
     }
   };
 
-  useEffect(() => {
-    if (formData.organization_id) {
-      fetchSites(formData.organization_id);
-    }
-  }, [formData.organization_id]);
-
   const fetchSites = async (organizationId: string) => {
     try {
       const data = await OrganizationsAPI.getSitesByOrganization(organizationId);
@@ -81,7 +81,10 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => ({
+      ...prev,
+      [name]: name === 'avg_daily_wages' ? parseFloat(value) || 0 : value
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -97,20 +100,24 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
       fetchWorkHistory();
       setShowForm(false);
       setEditingHistory(null);
-      setFormData({
-        worker_id: workerId,
-        work_name: '',
-        work_type: '',
-        location: '',
-        start_date: '',
-        end_date: '',
-        site_id: '',
-        organization_id: '',
-        avg_daily_wages: 0,
-      });
+      resetForm();
     } catch (error) {
       toast.error(editingHistory ? 'Failed to update work history' : 'Failed to add work history');
     }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      worker_id: workerId,
+      work_name: '',
+      work_type: '',
+      location: '',
+      start_date: '',
+      end_date: '',
+      site_id: '',
+      organization_id: '',
+      avg_daily_wages: 0,
+    });
   };
 
   const handleViewWorkHistoryDetail = async (workHistoryId: number) => {
@@ -132,6 +139,215 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
     } catch (error) {
       toast.error('Failed to delete work history');
     }
+  };
+
+  const handleEdit = (history: WorkHistory) => {
+    setFormData({
+      worker_id: workerId,
+      work_name: history.work_name,
+      work_type: history.work_type,
+      location: history.location,
+      start_date: new Date(history.start_date).toISOString().split('T')[0],
+      end_date: new Date(history.end_date).toISOString().split('T')[0],
+      site_id: history.site_id,
+      organization_id: history.organization_id,
+      avg_daily_wages: history.avg_daily_wages,
+    });
+    setEditingHistory(history);
+    setShowForm(true);
+
+    if (history.organization_id) {
+      fetchSites(history.organization_id);
+    }
+  };
+
+  const WorkHistoryFormModal = () => {
+    if (!showForm) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+            <h2 className="text-xl font-semibold text-gray-900">
+              {editingHistory ? 'Edit Work History' : 'Add Work History'}
+            </h2>
+            <button
+              onClick={() => {
+                setShowForm(false);
+                setEditingHistory(null);
+                resetForm();
+              }}
+              className="text-gray-400 hover:text-gray-500"
+            >
+              <X className="h-6 w-6" />
+            </button>
+          </div>
+
+          <div className="p-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Organization <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    name="organization_id"
+                    value={formData.organization_id}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  >
+                    <option value="">Select Organization</option>
+                    {organizations.map(org => (
+                      <option key={org.id} value={org.id}>{org.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Site <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    name="site_id"
+                    value={formData.site_id}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                    disabled={!formData.organization_id}
+                  >
+                    <option value="">Select Site</option>
+                    {sites.map(site => (
+                      <option key={site.id} value={site.id}>{site.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Work Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="work_name"
+                    value={formData.work_name}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Work Type <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    name="work_type"
+                    value={formData.work_type}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  >
+                    <option value="">Select Work Type</option>
+                    <option value="Full-time">Full-time</option>
+                    <option value="Part-time">Part-time</option>
+                    <option value="Contract">Contract</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Location <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="location"
+                    value={formData.location}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Average Daily Wages (₹) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    name="avg_daily_wages"
+                    value={formData.avg_daily_wages}
+                    onChange={handleInputChange}
+                    min="0"
+                    step="0.01"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Start Date <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    name="start_date"
+                    value={formData.start_date}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    End Date <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    name="end_date"
+                    value={formData.end_date}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowForm(false);
+                    setEditingHistory(null);
+                    resetForm();
+                  }}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                >
+                  {editingHistory ? (
+                    <>
+                      <Pencil className="h-5 w-5" />
+                      Update Work History
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="h-5 w-5" />
+                      Add Work History
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   if (loading) {
@@ -183,7 +399,11 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
             <h1 className="text-2xl font-bold text-gray-900">Worker Details</h1>
             <div className="flex items-center gap-4">
               <button
-                onClick={() => setShowForm(true)}
+                onClick={() => {
+                  setShowForm(true);
+                  setEditingHistory(null);
+                  resetForm();
+                }}
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
               >
                 <Plus className="h-5 w-5" />
@@ -202,7 +422,6 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            {/* Worker Info */}
             <div className="bg-white p-6 rounded-lg shadow-sm">
               <div className="flex items-center gap-4">
                 {workHistoryData.photograph ? (
@@ -232,7 +451,6 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
               </div>
             </div>
 
-            {/* Address Information */}
             <div className="bg-white p-6 rounded-lg shadow-sm">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Address Information</h3>
               <div className="space-y-4">
@@ -247,7 +465,6 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
               </div>
             </div>
 
-            {/* Working Days Summary */}
             <div className="bg-white p-6 rounded-lg shadow-sm">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Working Days Summary</h3>
               <div className="grid grid-cols-2 gap-4">
@@ -263,7 +480,6 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
             </div>
           </div>
 
-          {/* Work History Table */}
           <div className="bg-white rounded-lg shadow-sm overflow-hidden">
             <div className="p-6 border-b border-gray-200">
               <h2 className="text-lg font-semibold text-gray-900">Work History</h2>
@@ -306,36 +522,53 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
                         <div className="text-sm font-medium text-gray-900">{history.number_of_working_days}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                          history.status === 'approved'
-                            ? 'bg-green-100 text-green-800'
-                            : history.status === 'rejected'
-                            ? 'bg-red-100 text-red-800'
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {history.status}
-                        </span>
+                        <div className="flex flex-col gap-1">
+                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            history.status === 'approved'
+                              ? 'bg-green-100 text-green-800'
+                              : history.status === 'rejected'
+                              ? 'bg-red-100 text-red-800'
+                              : 'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {history.status}
+                          </span>
+                          {history.approved_date && (
+                            <div className="text-xs text-gray-500 flex items-center">
+                              <Clock className="h-3 w-3 mr-1" />
+                              {new Date(history.approved_date).toLocaleDateString()}
+                            </div>
+                          )}
+                          {history.rejected_date && (
+                            <div className="text-xs text-gray-500 flex items-center">
+                              <Clock className="h-3 w-3 mr-1" />
+                              {new Date(history.rejected_date).toLocaleDateString()}
+                            </div>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setEditingHistory(history);
-                            setShowForm(true);
-                          }}
-                          className="text-blue-600 hover:text-blue-900 mr-4"
-                        >
-                          <Pencil className="h-5 w-5" />
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteWorkHistory(history.id);
-                          }}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          <Trash2 className="h-5 w-5" />
-                        </button>
+                        {history.status === 'pending' && (
+                          <>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEdit(history);
+                              }}
+                              className="text-blue-600 hover:text-blue-900 mr-4"
+                            >
+                              <Pencil className="h-5 w-5" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteWorkHistory(history.id);
+                              }}
+                              className="text-red-600 hover:text-red-900"
+                            >
+                              <Trash2 className="h-5 w-5" />
+                            </button>
+                          </>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -352,6 +585,8 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
           </div>
         </div>
       </div>
+
+      <WorkHistoryFormModal />
 
       {selectedWorkHistory && (
         <WorkHistoryDetailModal
