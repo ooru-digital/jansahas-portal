@@ -12,12 +12,12 @@ interface EditWorkerModalProps {
 }
 
 export default function EditWorkerModal({ worker, isOpen, onClose, onWorkerUpdated }: EditWorkerModalProps) {
-  const [formData, setFormData] = useState<UpdateWorkerData>({
+  const [formData, setFormData] = useState<Omit<UpdateWorkerData, 'age'> & { age: string }>({
     name: worker.name,
     phone_number: worker.phone_number,
     present_address: worker.present_address,
     permanent_address: worker.permanent_address,
-    age: worker.age,
+    age: worker.age.toString(),
     gender: worker.gender.charAt(0).toUpperCase() + worker.gender.slice(1).toLowerCase(),
     organization_id: worker.organization_id
   });
@@ -38,9 +38,20 @@ export default function EditWorkerModal({ worker, isOpen, onClose, onWorkerUpdat
     
     if (isSubmitting) return;
 
+    // Validate age
+    const ageNum = parseInt(formData.age, 10);
+    if (isNaN(ageNum) || ageNum < 18 || ageNum > 100) {
+      toast.error('Please enter a valid age between 18 and 100');
+      return;
+    }
+
     try {
       setIsSubmitting(true);
-      await WorkerAPI.updateWorker(worker.id, formData);
+      const dataToSubmit: UpdateWorkerData = {
+        ...formData,
+        age: ageNum // Convert age to number
+      };
+      await WorkerAPI.updateWorker(worker.id, dataToSubmit);
       toast.success('Worker updated successfully');
       onWorkerUpdated();
       onClose();
@@ -88,12 +99,12 @@ export default function EditWorkerModal({ worker, isOpen, onClose, onWorkerUpdat
                 Age
               </label>
               <input
-                type="text"
+                type="number"
                 name="age"
                 value={formData.age}
                 onChange={handleInputChange}
-                pattern="\d{1,3}"
-                title="Please enter a valid age"
+                min="18"
+                max="100"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
               />

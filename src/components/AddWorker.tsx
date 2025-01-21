@@ -18,7 +18,7 @@ type Step = 'worker' | 'work-history';
 export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
   const [step, setStep] = useState<Step>('worker');
   const [createdWorkerId, setCreatedWorkerId] = useState<number | null>(null);
-  const [formData, setFormData] = useState<CreateWorkerData>({
+  const [formData, setFormData] = useState<Omit<CreateWorkerData, 'age'> & { age: string }>({
     name: '',
     phone_number: '',
     present_address: '',
@@ -113,7 +113,7 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
     if (step === 'worker') {
       setFormData(prev => ({
         ...prev,
-        [name]: name === 'age' ? (value === '' ? '' : value) : value
+        [name]: value
       }));
     } else {
       setWorkHistoryData(prev => ({
@@ -184,13 +184,20 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
   const handleWorkerSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.age || parseInt(formData.age) < 18 || parseInt(formData.age) > 100) {
+    // Validate and convert age to number
+    const ageNum = parseInt(formData.age, 10);
+    if (isNaN(ageNum) || ageNum < 18 || ageNum > 100) {
       toast.error('Please enter a valid age between 18 and 100');
       return;
     }
 
     try {
-      const worker = await WorkerAPI.createWorker(formData);
+      const workerData: CreateWorkerData = {
+        ...formData,
+        age: ageNum // Convert age to number before sending to API
+      };
+      
+      const worker = await WorkerAPI.createWorker(workerData);
       toast.success('Worker added successfully');
       setCreatedWorkerId(worker.id);
       setWorkHistoryData(prev => ({ ...prev, worker_id: worker.id }));
