@@ -51,11 +51,6 @@ jobs:
       run: |
         export NODE_OPTIONS=--max-old-space-size=4096
         CI=false npm run build
-    
-    - name: Verify Build Output
-      run: |
-        echo "Checking contents of the build directory:"
-        ls -l dist
 
     - name: Copy file via ssh key
       uses: appleboy/scp-action@v0.1.7
@@ -65,7 +60,7 @@ jobs:
         port: 22
         key: ${{ secrets.ssh_key }}
         source: dist/*
-        target: /home/ubuntu/sources/jansahas-portal
+        target: /var/www/jansahas-web
         strip_components: 1
         debug: true
           
