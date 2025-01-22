@@ -50,7 +50,13 @@ jobs:
         export NODE_OPTIONS=--max-old-space-size=4096
         CI=false npm run build
 
+    - name: Debug Build Directory
+      run: |
+        echo "Checking contents of the build directory:"
+        ls -l build
+
     - name: Copy file via ssh key
+      if: success() && steps.Debug_Build_Directory.outputs.exists == 'true'
       uses: appleboy/scp-action@v0.1.7
       with:
         host: ${{ inputs.host }}
