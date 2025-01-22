@@ -21,6 +21,8 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      PATH: /usr/bin:/bin:$JAVA_HOME/bin:$PATH
 
     steps:
     - name: Checkout code
@@ -51,10 +53,10 @@ jobs:
         export NODE_OPTIONS=--max-old-space-size=4096
         CI=false npm run build
 
-    - name: Debug Build Directory
-      run: |
-        echo "Checking contents of the build directory:"
-        ls -l build
+    # - name: Debug Build Directory
+    #   run: |
+    #     echo "Checking contents of the build directory:"
+    #     ls -l build
 
     - name: Copy file via ssh key
       if: success() && steps.Debug_Build_Directory.outputs.exists == 'true'
