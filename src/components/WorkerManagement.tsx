@@ -1,21 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronRight, Search, Plus, Upload, History, Trash2, Pencil, User } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 import * as WorkerAPI from '../api/workers';
 import type { Worker } from '../api/workers';
-import WorkHistoryView from './WorkHistoryView';
-import BulkUpload from './BulkUpload';
-import AddWorker from './AddWorker';
 import EditWorkerModal from './EditWorkerModal';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
 
 export default function WorkerManagement() {
+  const navigate = useNavigate();
   const [workers, setWorkers] = useState<Worker[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedWorkerId, setSelectedWorkerId] = useState<number | null>(null);
-  const [showBulkUpload, setShowBulkUpload] = useState(false);
-  const [showAddWorker, setShowAddWorker] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingWorkerId, setDeletingWorkerId] = useState<number | null>(null);
   const [editingWorker, setEditingWorker] = useState<Worker | null>(null);
@@ -33,23 +29,6 @@ export default function WorkerManagement() {
       toast.error('Failed to fetch workers');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleWorkerAdded = () => {
-    fetchWorkers();
-    setShowAddWorker(false);
-  };
-
-  const handleBulkUploadComplete = async () => {
-    try {
-      // Wait for a moment to ensure server has processed the upload
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      await fetchWorkers(); // Fetch updated workers list
-      setShowBulkUpload(false);
-    } catch (error) {
-      console.error('Error refreshing workers:', error);
-      toast.error('Failed to refresh workers list');
     }
   };
 
@@ -83,7 +62,7 @@ export default function WorkerManagement() {
   };
 
   const handleRowClick = (workerId: number) => {
-    setSelectedWorkerId(workerId);
+    navigate(`/workers/${workerId}`);
   };
 
   const filteredWorkers = workers.filter(worker => {
@@ -96,18 +75,6 @@ export default function WorkerManagement() {
       (worker.gender?.toLowerCase() || '').includes(searchLower)
     );
   });
-
-  if (showBulkUpload) {
-    return <BulkUpload onBack={handleBulkUploadComplete} />;
-  }
-
-  if (showAddWorker) {
-    return <AddWorker onBack={() => setShowAddWorker(false)} onWorkerAdded={handleWorkerAdded} />;
-  }
-
-  if (selectedWorkerId) {
-    return <WorkHistoryView workerId={selectedWorkerId} onBack={() => setSelectedWorkerId(null)} />;
-  }
 
   if (loading) {
     return (
@@ -126,14 +93,14 @@ export default function WorkerManagement() {
               <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Workers</h1>
               <div className="flex flex-col sm:flex-row gap-3">
                 <button
-                  onClick={() => setShowBulkUpload(true)}
+                  onClick={() => navigate('/workers/add-in-bulk')}
                   className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 w-full sm:w-auto"
                 >
                   <Upload className="h-4 w-4 mr-2" />
                   Add in Bulk
                 </button>
                 <button
-                  onClick={() => setShowAddWorker(true)}
+                  onClick={() => navigate('/workers/add-worker')}
                   className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
                 >
                   <Plus className="h-4 w-4 mr-2" />
