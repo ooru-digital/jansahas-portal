@@ -1,0 +1,55 @@
+name: Deploy Jansahas Web Application
+
+on:
+  workflow_call:
+    inputs:
+      branch:
+        required: true
+        type: string
+      username:
+        required: true
+        type: string
+      host:
+        required: true
+        type: string
+    secrets:
+      ssh_key:
+        required: true
+      DISCORD_STAGING_BUILDS_URL:
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.branch }}
+
+    - name: Deploy to Server
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ inputs.host }}
+        username: ${{ inputs.username }}
+        key: ${{ secrets.ssh_key }}
+        script: |
+          set -e
+          export PATH=/usr/bin:/bin:$JAVA_HOME/bin:$PATH
+          cd /home/ubuntu/sources/jansahas-portal
+          git pull origin ${{ inputs.branch }}
+          npm install
+          npm run build
+          cp -r dist/* /var/www/jansahas-web/
+          
+    - name: Discord notifications on success
+      if: success()
+      run: |
+        message="Jansahas-web workflow on branch ${{ inputs.branch }} has succeeded. ✅ \nLink - [GitHub Actions Workflow Run](https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)"
+        curl -X POST -H "Content-Type: application/json" -d "{\"content\":\"$message\"}" ${{ secrets.DISCORD_STAGING_BUILDS_URL }}
+
+    - name: Send Discord Notification on Failure
+      if: failure()
+      run: |
+        message="Jansahas-web workflow on branch ${{ inputs.branch }} has failed. ❌ \nLink - [GitHub Actions Workflow Run](https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)"
+        curl -X POST -H "Content-Type: application/json" -d "{\"content\":\"$message\"}" ${{ secrets.DISCORD_STAGING_BUILDS_URL }}
