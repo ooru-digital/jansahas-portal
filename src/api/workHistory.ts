@@ -21,6 +21,7 @@ export interface WorkHistory {
   avg_daily_wages: number;
   approved_date?: string;
   rejected_date?: string;
+  approved_by?: string;
 }
 
 export interface WorkHistoryResponse {

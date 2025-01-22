@@ -189,6 +189,7 @@ export default function Approvals() {
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Site</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Working Days</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created At</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                     <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
@@ -243,6 +244,11 @@ export default function Approvals() {
                         <div className="text-sm font-medium text-gray-900">{approval.number_of_working_days || 0}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-500">
+                          {new Date(approval.created_at).toLocaleDateString()}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
                           {approval.status}
                         </span>
@@ -273,7 +279,7 @@ export default function Approvals() {
                   ))}
                   {pendingApprovals.length === 0 && (
                     <tr>
-                      <td colSpan={9} className="px-6 py-4 text-center text-gray-500">
+                      <td colSpan={10} className="px-6 py-4 text-center text-gray-500">
                         No pending approvals
                       </td>
                     </tr>

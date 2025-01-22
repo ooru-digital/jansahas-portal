@@ -7,7 +7,7 @@ export interface Worker {
   present_address: string;
   permanent_address: string;
   organization_id: string;
-  age: string;
+  age: number;
   gender: string;
   photograph: string | null;
 }
@@ -18,7 +18,7 @@ export interface CreateWorkerData {
   present_address: string;
   permanent_address: string;
   organization_id: string;
-  age: string;
+  age: string | number;
   gender: string;
   photograph: string | File | null;
 }
@@ -29,7 +29,7 @@ export interface UpdateWorkerData {
   present_address?: string;
   permanent_address?: string;
   organization_id?: string;
-  age?: string;
+  age?: number;
   gender?: string;
 }
 
@@ -40,7 +40,7 @@ interface ApiWorkerResponse {
   present_address: string;
   permanent_address: string;
   organization_id: string;
-  age: string;
+  age: number;
   sex: string;
   photograph: string | null;
 }
@@ -71,6 +71,11 @@ const mapApiWorkerToClient = (apiWorker: ApiWorkerResponse): Worker => {
 export const createWorker = async (data: CreateWorkerData): Promise<Worker> => {
   try {
     let requestData = { ...data };
+
+    // Convert age to number if it's a string
+    if (typeof data.age === 'string') {
+      requestData.age = parseInt(data.age, 10);
+    }
 
     // Convert photograph to base64 if it exists and is a File
     if (data.photograph instanceof File) {

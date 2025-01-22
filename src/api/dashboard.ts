@@ -35,6 +35,14 @@ export interface WorkHistoryDetail extends WorkDetail {
   rejected_date?: string;
   organization_id: string;
   site_id: string;
+  phone_number?: string;
+  age?: string;
+  sex?: string;
+  present_address?: string;
+  permanent_address?: string;
+  avg_daily_wages: number;
+  approved_by?: string;
+  rejected_by?: string;
 }
 
 interface BulkUpdateItem {
