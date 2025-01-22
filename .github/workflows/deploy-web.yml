@@ -44,6 +44,11 @@ jobs:
     - name: Update Browserslist Database
       run: npx update-browserslist-db@latest --force
 
+    - name: Verify Build Output
+      run: |
+        echo "Checking contents of the build directory:"
+        ls -l build
+
     - name: Install dependencies
       run: npm install
 
@@ -62,6 +67,7 @@ jobs:
         source: build/*
         target: /home/ubuntu/sources/jansahas-portal
         strip_components: 1
+        debug: true
           
     # - name: Discord notifications on success
     #   if: success()
