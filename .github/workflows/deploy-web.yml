@@ -1,0 +1,74 @@
+name: Deploy Jansahas Web Application
+
+on:
+  workflow_call:
+    inputs:
+      branch:
+        required: true
+        type: string
+      username:
+        required: true
+        type: string
+      host:
+        required: true
+        type: string
+    secrets:
+      ssh_key:
+        required: true
+      DISCORD_STAGING_BUILDS_URL:
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ inputs.branch }}
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '21.x'
+    
+    - name: Node Version
+      run: node --version
+      
+    - name: NPM Version
+      run: npm --version
+
+    - name: Update Browserslist Database
+      run: npx update-browserslist-db@latest --force
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Build Credissuer App
+      run: |
+        export NODE_OPTIONS=--max-old-space-size=4096
+        CI=false npm run build
+
+    - name: Copy file via ssh key
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ inputs.host }}
+        username: ${{ inputs.username }}
+        port: 22
+        key: ${{ secrets.ssh_key }}
+        source: build/*
+        target: /home/ubuntu/sources/jansahas-portal
+        strip_components: 1
+          
+    - name: Discord notifications on success
+      if: success()
+      run: |
+        message="Jansahas-web workflow on branch ${{ inputs.branch }} has succeeded. ✅ \nLink - [GitHub Actions Workflow Run](https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)"
+        curl -X POST -H "Content-Type: application/json" -d "{\"content\":\"$message\"}" ${{ secrets.DISCORD_STAGING_BUILDS_URL }}
+
+    - name: Send Discord Notification on Failure
+      if: failure()
+      run: |
+        message="Jansahas-web workflow on branch ${{ inputs.branch }} has failed. ❌ \nLink - [GitHub Actions Workflow Run](https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)"
+        curl -X POST -H "Content-Type: application/json" -d "{\"content\":\"$message\"}" ${{ secrets.DISCORD_STAGING_BUILDS_URL }}
