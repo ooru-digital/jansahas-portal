@@ -27,8 +27,13 @@ export default function Login({ onLogin }: LoginProps) {
         email: formData.email,
         password: formData.password,
       });
+
+      // Store tokens and user info separately
+      const { access, refresh, ...userInfo } = response;
+      localStorage.setItem('tokens', JSON.stringify({ access, refresh }));
+      localStorage.setItem('userInfo', JSON.stringify(userInfo));
+      
       toast.success('Login successful!');
-      localStorage.setItem('tokens', JSON.stringify(response));
       onLogin();
     } catch (error) {
       // Error will be handled by axios interceptor

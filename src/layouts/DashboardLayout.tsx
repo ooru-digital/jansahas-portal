@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Navigate, Outlet, NavLink } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Navigate, Outlet, NavLink, useLocation } from 'react-router-dom';
 import { Home, Users, CheckSquare, LogOut, Menu, X, ChevronDown } from 'lucide-react';
 
 interface DashboardLayoutProps {
@@ -7,13 +7,24 @@ interface DashboardLayoutProps {
   onLogout: () => void;
 }
 
+interface UserInfo {
+  username: string;
+  email: string;
+  is_jansathi: boolean;
+}
+
 export default function DashboardLayout({ isAuthenticated, onLogout }: DashboardLayoutProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showLogout, setShowLogout] = useState(false);
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+  const location = useLocation();
 
-  const userInfo = localStorage.getItem('tokens') 
-    ? JSON.parse(localStorage.getItem('tokens')!) 
-    : null;
+  useEffect(() => {
+    const userInfoStr = localStorage.getItem('userInfo');
+    if (userInfoStr) {
+      setUserInfo(JSON.parse(userInfoStr));
+    }
+  }, []);
 
   const getInitials = (name: string) => {
     return name
@@ -29,6 +40,7 @@ export default function DashboardLayout({ isAuthenticated, onLogout }: Dashboard
 
   const handleLogout = () => {
     localStorage.removeItem('tokens');
+    localStorage.removeItem('userInfo');
     onLogout();
   };
 
@@ -76,7 +88,7 @@ export default function DashboardLayout({ isAuthenticated, onLogout }: Dashboard
                 className="w-full group flex items-center px-2 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-md"
               >
                 <div className="h-8 w-8 flex-shrink-0 mr-2 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium">
-                  {getInitials(userInfo?.username || '')}
+                  {userInfo?.username ? getInitials(userInfo.username) : ''}
                 </div>
                 <div className="flex-1 text-left">
                   <p className="text-base font-medium">{userInfo?.username}</p>
@@ -161,7 +173,7 @@ export default function DashboardLayout({ isAuthenticated, onLogout }: Dashboard
                     className="w-full group flex items-center px-2 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-md"
                   >
                     <div className="h-8 w-8 flex-shrink-0 mr-2 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium">
-                      {getInitials(userInfo?.username || '')}
+                      {userInfo?.username ? getInitials(userInfo.username) : ''}
                     </div>
                     <div className="flex-1 text-left">
                       <p className="text-base font-medium">{userInfo?.username}</p>
