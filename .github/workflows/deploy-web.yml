@@ -52,6 +52,12 @@ jobs:
         export NODE_OPTIONS=--max-old-space-size=4096
         CI=false npm run build
 
+    - name: Add Remote Host to Known Hosts
+      run: |
+        mkdir -p ~/.ssh
+        ssh-keyscan -H ${{ inputs.host }} >> ~/.ssh/known_hosts
+
+
     - name: Debug SCP
       run: |
         scp -v -i ${{ secrets.SSH_PRIVATE_KEY }} dist/* root@164.52.195.213:/var/www/jansahas-web/
