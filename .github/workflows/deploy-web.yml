@@ -60,15 +60,17 @@ jobs:
         source: build/*
         target: /home/ubuntu/sources/jansahas-portal
         strip_components: 1
+      env:
+        PATH: /usr/bin:/bin:$JAVA_HOME/bin:$PATH
           
-    - name: Discord notifications on success
-      if: success()
-      run: |
-        message="Jansahas-web workflow on branch ${{ inputs.branch }} has succeeded. ✅ \nLink - [GitHub Actions Workflow Run](https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)"
-        curl -X POST -H "Content-Type: application/json" -d "{\"content\":\"$message\"}" ${{ secrets.DISCORD_STAGING_BUILDS_URL }}
+    # - name: Discord notifications on success
+    #   if: success()
+    #   run: |
+    #     message="Jansahas-web workflow on branch ${{ inputs.branch }} has succeeded. ✅ \nLink - [GitHub Actions Workflow Run](https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)"
+    #     curl -X POST -H "Content-Type: application/json" -d "{\"content\":\"$message\"}" ${{ secrets.DISCORD_STAGING_BUILDS_URL }}
 
-    - name: Send Discord Notification on Failure
-      if: failure()
-      run: |
-        message="Jansahas-web workflow on branch ${{ inputs.branch }} has failed. ❌ \nLink - [GitHub Actions Workflow Run](https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)"
-        curl -X POST -H "Content-Type: application/json" -d "{\"content\":\"$message\"}" ${{ secrets.DISCORD_STAGING_BUILDS_URL }}
+    # - name: Send Discord Notification on Failure
+    #   if: failure()
+    #   run: |
+    #     message="Jansahas-web workflow on branch ${{ inputs.branch }} has failed. ❌ \nLink - [GitHub Actions Workflow Run](https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID)"
+    #     curl -X POST -H "Content-Type: application/json" -d "{\"content\":\"$message\"}" ${{ secrets.DISCORD_STAGING_BUILDS_URL }}
