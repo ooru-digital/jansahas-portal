@@ -52,27 +52,17 @@ jobs:
         export NODE_OPTIONS=--max-old-space-size=4096
         CI=false npm run build
 
-    - name: Add Remote Host to Known Hosts
-      run: |
-        mkdir -p ~/.ssh
-        ssh-keyscan -H ${{ inputs.host }} >> ~/.ssh/known_hosts
-
-
-    - name: Debug SCP
-      run: |
-        scp -v -i ${{ secrets.SSH_PRIVATE_KEY }} dist/* root@164.52.195.213:/var/www/jansahas-web/
-
-    # - name: Copy file via ssh key
-    #   uses: appleboy/scp-action@v0.1.7
-    #   with:
-    #     host: ${{ inputs.host }}
-    #     username: ${{ inputs.username }}
-    #     port: 22
-    #     key: ${{ secrets.ssh_key }}
-    #     source: dist/*
-    #     target: /var/www/jansahas-web/
-    #     strip_components: 1
-    #     debug: true
+    - name: Copy file via ssh key
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ inputs.host }}
+        username: ${{ inputs.username }}
+        port: 22
+        key: ${{ secrets.ssh_key }}
+        source: dist/*
+        target: /var/www/jansahas-web/
+        strip_components: 1
+        debug: true
           
     # - name: Discord notifications on success
     #   if: success()
