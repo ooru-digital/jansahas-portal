@@ -63,6 +63,8 @@ jobs:
         target: /var/www/jansahas-web/
         strip_components: 1
         debug: true
+      env:
+        PATH: /usr/bin:/bin:$JAVA_HOME/bin:$PATH
           
     # - name: Discord notifications on success
     #   if: success()
