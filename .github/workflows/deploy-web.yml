@@ -55,7 +55,7 @@ jobs:
     - name: Verify Build Output
       run: |
         echo "Checking contents of the build directory:"
-        ls -l build
+        ls -l dist
 
     - name: Copy file via ssh key
       uses: appleboy/scp-action@v0.1.7
@@ -64,7 +64,7 @@ jobs:
         username: ${{ inputs.username }}
         port: 22
         key: ${{ secrets.ssh_key }}
-        source: build/*
+        source: dist/*
         target: /home/ubuntu/sources/jansahas-portal
         strip_components: 1
         debug: true
