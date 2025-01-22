@@ -213,326 +213,329 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
       await WorkHistoryAPI.createWorkHistory(workHistoryData);
       toast.success('Work history added successfully');
       onWorkerAdded();
-      onBack();
     } catch (error) {
       toast.error('Failed to add work history');
     }
   };
 
-  const renderWorkerForm = () => (
-    <form onSubmit={handleWorkerSubmit} className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Full Name <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            name="name"
-            value={formData.name}
-            onChange={handleInputChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            required
-          />
-        </div>
+  function renderWorkerForm() {
+    return (
+      <form onSubmit={handleWorkerSubmit} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Full Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required
+            />
+          </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Age <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="number"
-            name="age"
-            value={formData.age}
-            onChange={handleInputChange}
-            min="18"
-            max="100"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            required
-          />
-        </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Age <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="number"
+              name="age"
+              value={formData.age}
+              onChange={handleInputChange}
+              min="18"
+              max="100"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required
+            />
+          </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Gender <span className="text-red-500">*</span>
-          </label>
-          <select
-            name="gender"
-            value={formData.gender}
-            onChange={handleInputChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            required
-          >
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
-            <option value="Others">Others</option>
-          </select>
-        </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Gender <span className="text-red-500">*</span>
+            </label>
+            <select
+              name="gender"
+              value={formData.gender}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required
+            >
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Others">Others</option>
+            </select>
+          </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Phone Number <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="tel"
-            name="phone_number"
-            value={formData.phone_number}
-            onChange={handleInputChange}
-            pattern="[0-9]{10}"
-            title="Please enter a valid 10-digit phone number"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            required
-          />
-        </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Phone Number <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="tel"
+              name="phone_number"
+              value={formData.phone_number}
+              onChange={handleInputChange}
+              pattern="[0-9]{10}"
+              title="Please enter a valid 10-digit phone number"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required
+            />
+          </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Photograph
-          </label>
-          <div className="mt-1 flex items-center gap-4">
-            {!photoPreview && !showCamera && (
-              <>
-                <button
-                  type="button"
-                  onClick={startCamera}
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  <Camera className="h-5 w-5 mr-2" />
-                  Take Photo
-                </button>
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  <Upload className="h-5 w-5 mr-2" />
-                  Upload Photo
-                </button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                />
-              </>
-            )}
-            {photoPreview && (
-              <div className="relative">
-                <img
-                  src={photoPreview}
-                  alt="Preview"
-                  className="h-32 w-32 object-cover rounded-lg"
-                />
-                <button
-                  type="button"
-                  onClick={clearPhoto}
-                  className="absolute -top-2 -right-2 p-1 bg-red-100 rounded-full text-red-600 hover:bg-red-200"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            )}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Photograph
+            </label>
+            <div className="mt-1 flex items-center gap-4">
+              {!photoPreview && !showCamera && (
+                <>
+                  <button
+                    type="button"
+                    onClick={startCamera}
+                    className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    <Camera className="h-5 w-5 mr-2" />
+                    Take Photo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    <Upload className="h-5 w-5 mr-2" />
+                    Upload Photo
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                </>
+              )}
+              {photoPreview && (
+                <div className="relative">
+                  <img
+                    src={photoPreview}
+                    alt="Preview"
+                    className="h-32 w-32 object-cover rounded-lg"
+                  />
+                  <button
+                    type="button"
+                    onClick={clearPhoto}
+                    className="absolute -top-2 -right-2 p-1 bg-red-100 rounded-full text-red-600 hover:bg-red-200"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Present Address <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              name="present_address"
+              value={formData.present_address}
+              onChange={handleInputChange}
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required
+            />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Permanent Address <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              name="permanent_address"
+              value={formData.permanent_address}
+              onChange={handleInputChange}
+              rows={3}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required
+            />
           </div>
         </div>
 
-        <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Present Address <span className="text-red-500">*</span>
-          </label>
-          <textarea
-            name="present_address"
-            value={formData.present_address}
-            onChange={handleInputChange}
-            rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            required
-          />
-        </div>
-
-        <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Permanent Address <span className="text-red-500">*</span>
-          </label>
-          <textarea
-            name="permanent_address"
-            value={formData.permanent_address}
-            onChange={handleInputChange}
-            rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            required
-          />
-        </div>
-      </div>
-
-      <div className="flex justify-end gap-4">
-        <button
-          type="button"
-          onClick={onBack}
-          className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
-        >
-          Continue to Add Work History
-          <ChevronRight className="h-5 w-5" />
-        </button>
-      </div>
-    </form>
-  );
-
-  const renderWorkHistoryForm = () => (
-    <form onSubmit={handleWorkHistorySubmit} className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Organization <span className="text-red-500">*</span>
-          </label>
-          <select
-            name="organization_id"
-            value={workHistoryData.organization_id}
-            onChange={handleInputChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            required
+        <div className="flex justify-end gap-4">
+          <button
+            type="button"
+            onClick={onBack}
+            className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
           >
-            <option value="">Select Organization</option>
-            {organizations.map(org => (
-              <option key={org.id} value={org.id}>{org.name}</option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Site <span className="text-red-500">*</span>
-          </label>
-          <select
-            name="site_id"
-            value={workHistoryData.site_id}
-            onChange={handleInputChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            required
-            disabled={!workHistoryData.organization_id}
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
           >
-            <option value="">Select Site</option>
-            {sites.map(site => (
-              <option key={site.id} value={site.id}>{site.name}</option>
-            ))}
-          </select>
+            Continue to Add Work History
+            <ChevronRight className="h-5 w-5" />
+          </button>
+        </div>
+      </form>
+    );
+  }
+
+  function renderWorkHistoryForm() {
+    return (
+      <form onSubmit={handleWorkHistorySubmit} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Organization <span className="text-red-500">*</span>
+            </label>
+            <select
+              name="organization_id"
+              value={workHistoryData.organization_id}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required
+            >
+              <option value="">Select Organization</option>
+              {organizations.map(org => (
+                <option key={org.id} value={org.id}>{org.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Site <span className="text-red-500">*</span>
+            </label>
+            <select
+              name="site_id"
+              value={workHistoryData.site_id}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required
+              disabled={!workHistoryData.organization_id}
+            >
+              <option value="">Select Site</option>
+              {sites.map(site => (
+                <option key={site.id} value={site.id}>{site.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Work Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              name="work_name"
+              value={workHistoryData.work_name}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Work Type <span className="text-red-500">*</span>
+            </label>
+            <select
+              name="work_type"
+              value={workHistoryData.work_type}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required
+            >
+              <option value="">Select Work Type</option>
+              <option value="Full-time">Full-time</option>
+              <option value="Part-time">Part-time</option>
+              <option value="Contract">Contract</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Location <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              name="location"
+              value={workHistoryData.location}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Average Daily Wages (₹) <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="number"
+              name="avg_daily_wages"
+              value={workHistoryData.avg_daily_wages}
+              onChange={handleInputChange}
+              min="0"
+              step="0.01"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Start Date <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="date"
+              name="start_date"
+              value={workHistoryData.start_date}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              End Date <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="date"
+              name="end_date"
+              value={workHistoryData.end_date}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              required
+            />
+          </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Work Name <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            name="work_name"
-            value={workHistoryData.work_name}
-            onChange={handleInputChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Work Type <span className="text-red-500">*</span>
-          </label>
-          <select
-            name="work_type"
-            value={workHistoryData.work_type}
-            onChange={handleInputChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            required
+        <div className="flex justify-end gap-4">
+          <button
+            type="button"
+            onClick={onWorkerAdded}
+            className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
           >
-            <option value="">Select Work Type</option>
-            <option value="Full-time">Full-time</option>
-            <option value="Part-time">Part-time</option>
-            <option value="Contract">Contract</option>
-          </select>
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+          >
+            <Plus className="h-5 w-5" />
+            Add Work History
+          </button>
         </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Location <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="text"
-            name="location"
-            value={workHistoryData.location}
-            onChange={handleInputChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Average Daily Wages (₹) <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="number"
-            name="avg_daily_wages"
-            value={workHistoryData.avg_daily_wages}
-            onChange={handleInputChange}
-            min="0"
-            step="0.01"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Start Date <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="date"
-            name="start_date"
-            value={workHistoryData.start_date}
-            onChange={handleInputChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            required
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            End Date <span className="text-red-500">*</span>
-          </label>
-          <input
-            type="date"
-            name="end_date"
-            value={workHistoryData.end_date}
-            onChange={handleInputChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            required
-          />
-        </div>
-      </div>
-
-      <div className="flex justify-end gap-4">
-        <button
-          type="button"
-          onClick={() => setStep('worker')}
-          className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-        >
-          Back
-        </button>
-        <button
-          type="submit"
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
-        >
-          <Plus className="h-5 w-5" />
-          Add Work History
-        </button>
-      </div>
-    </form>
-  );
+      </form>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -553,7 +556,9 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
           <div className="bg-white rounded-lg shadow-sm">
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
-                <h1 className="text-2xl font-bold text-gray-900">Add New Worker</h1>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  {step === 'worker' ? 'Add New Worker' : 'Add Work History'}
+                </h1>
                 <div className="flex items-center gap-2 text-sm text-gray-500">
                   <span className={step === 'worker' ? 'text-blue-600 font-medium' : 'text-gray-400'}>
                     Worker Details
