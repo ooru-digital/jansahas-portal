@@ -1,225 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Clock, CheckSquare, XCircle, Pencil, Trash2, Award, User, Plus, X } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { ArrowLeft, Plus, Award, User, Camera, Upload, X, Pencil, Trash2, Clock } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import * as WorkHistoryAPI from '../api/workHistory';
 import * as OrganizationsAPI from '../api/organizations';
+import * as WorkerAPI from '../api/workers';
 import { getWorkHistoryDetail } from '../api/dashboard';
 import type { WorkHistory, WorkHistoryResponse, CreateWorkHistoryData } from '../api/workHistory';
 import type { Organization, Site } from '../api/organizations';
 import type { WorkHistoryDetail } from '../api/dashboard';
 import WorkHistoryDetailModal from './WorkHistoryDetailModal';
+import WorkHistoryFormModal from './WorkHistoryFormModal';
+import api from '../api/axiosInstance';
 
 interface WorkHistoryViewProps {
   workerId: number;
   onBack: () => void;
 }
-
-const WorkHistoryFormModal = ({ 
-  isOpen, 
-  onClose, 
-  formData, 
-  setFormData, 
-  organizations, 
-  sites, 
-  onSubmit, 
-  isEditing 
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  formData: CreateWorkHistoryData;
-  setFormData: React.Dispatch<React.SetStateAction<CreateWorkHistoryData>>;
-  organizations: Organization[];
-  sites: Site[];
-  onSubmit: (e: React.FormEvent) => Promise<void>;
-  isEditing: boolean;
-}) => {
-  if (!isOpen) return null;
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: name === 'avg_daily_wages' ? parseFloat(value) || 0 : value
-    }));
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-          <h2 className="text-xl font-semibold text-gray-900">
-            {isEditing ? 'Edit Work History' : 'Add Work History'}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-500"
-          >
-            <X className="h-6 w-6" />
-          </button>
-        </div>
-
-        <div className="p-6">
-          <form onSubmit={onSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Organization <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="organization_id"
-                  value={formData.organization_id}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                >
-                  <option value="">Select Organization</option>
-                  {organizations.map(org => (
-                    <option key={org.id} value={org.id}>{org.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Site <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="site_id"
-                  value={formData.site_id}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                  disabled={!formData.organization_id}
-                >
-                  <option value="">Select Site</option>
-                  {sites.map(site => (
-                    <option key={site.id} value={site.id}>{site.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Work Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="work_name"
-                  value={formData.work_name}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Work Type <span className="text-red-500">*</span>
-                </label>
-                <select
-                  name="work_type"
-                  value={formData.work_type}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                >
-                  <option value="">Select Work Type</option>
-                  <option value="Full-time">Full-time</option>
-                  <option value="Part-time">Part-time</option>
-                  <option value="Contract">Contract</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Location <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="location"
-                  value={formData.location}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Average Daily Wages (₹) <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="number"
-                  name="avg_daily_wages"
-                  value={formData.avg_daily_wages}
-                  onChange={handleInputChange}
-                  min="0"
-                  step="0.01"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Start Date <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="date"
-                  name="start_date"
-                  value={formData.start_date}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  End Date <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="date"
-                  name="end_date"
-                  value={formData.end_date}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-4">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
-              >
-                {isEditing ? (
-                  <>
-                    <Pencil className="h-5 w-5" />
-                    Update Work History
-                  </>
-                ) : (
-                  <>
-                    <Plus className="h-5 w-5" />
-                    Add Work History
-                  </>
-                )}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewProps) {
   const [workHistoryData, setWorkHistoryData] = useState<WorkHistoryResponse | null>(null);
@@ -230,16 +26,21 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [sites, setSites] = useState<Site[]>([]);
   const [selectedWorkHistory, setSelectedWorkHistory] = useState<WorkHistoryDetail | null>(null);
+  const [showCamera, setShowCamera] = useState(false);
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const photoRef = useRef<HTMLCanvasElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [formData, setFormData] = useState<CreateWorkHistoryData>({
     worker_id: workerId,
     work_name: '',
     work_type: '',
-    location: '',
     start_date: '',
     end_date: '',
     site_id: '',
     organization_id: '',
-    avg_daily_wages: 0,
   });
 
   useEffect(() => {
@@ -252,6 +53,12 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
       fetchSites(formData.organization_id);
     }
   }, [formData.organization_id]);
+
+  useEffect(() => {
+    return () => {
+      stopCamera();
+    };
+  }, []);
 
   const fetchWorkHistory = async () => {
     try {
@@ -286,6 +93,105 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
     }
   };
 
+  const initializeCamera = async () => {
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: 'user',
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
+      });
+      
+      setStream(mediaStream);
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream;
+      }
+    } catch (error) {
+      toast.error('Unable to access camera');
+      setShowCamera(false);
+    }
+  };
+
+  const startCamera = () => {
+    setShowCamera(true);
+    initializeCamera();
+  };
+
+  const stopCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+    setShowCamera(false);
+  };
+
+  const capturePhoto = () => {
+    if (videoRef.current && photoRef.current) {
+      const video = videoRef.current;
+      const canvas = photoRef.current;
+      const context = canvas.getContext('2d');
+
+      if (!context) return;
+
+      const { videoWidth, videoHeight } = video;
+      const aspectRatio = videoWidth / videoHeight;
+      
+      const targetWidth = 800;
+      const targetHeight = targetWidth / aspectRatio;
+      
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+
+      context.drawImage(video, 0, 0, targetWidth, targetHeight);
+
+      const base64Image = canvas.toDataURL('image/jpeg', 0.8);
+      
+      // Update the worker's photo
+      api.patch(`/worker/${workerId}/update/`, {
+        photograph: base64Image
+      })
+      .then(() => {
+        toast.success('Photo updated successfully');
+        fetchWorkHistory(); // Refresh worker data
+      })
+      .catch(() => {
+        toast.error('Failed to update photo');
+      });
+
+      stopCamera();
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.type.startsWith('image/')) {
+        try {
+          const reader = new FileReader();
+          reader.onload = async () => {
+            const base64Image = reader.result as string;
+            try {
+              await api.patch(`/worker/${workerId}/update/`, {
+                photograph: base64Image
+              });
+              toast.success('Photo updated successfully');
+              fetchWorkHistory(); // Refresh worker data
+            } catch (error) {
+              toast.error('Failed to update photo');
+            }
+          };
+          reader.readAsDataURL(file);
+        } catch (error) {
+          toast.error('Failed to process image');
+        }
+      } else {
+        toast.error('Please upload an image file');
+      }
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -303,12 +209,10 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
         worker_id: workerId,
         work_name: '',
         work_type: '',
-        location: '',
         start_date: '',
         end_date: '',
         site_id: '',
         organization_id: '',
-        avg_daily_wages: 0,
       });
     } catch (error) {
       toast.error(editingHistory ? 'Failed to update work history' : 'Failed to add work history');
@@ -400,12 +304,10 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
                     worker_id: workerId,
                     work_name: '',
                     work_type: '',
-                    location: '',
                     start_date: '',
                     end_date: '',
                     site_id: '',
                     organization_id: '',
-                    avg_daily_wages: 0,
                   });
                   setShowForm(true);
                 }}
@@ -429,18 +331,45 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             {/* Worker Info */}
             <div className="bg-white p-6 rounded-lg shadow-sm">
-              <div className="flex items-center gap-4">
-                {workHistoryData.photograph ? (
-                  <img
-                    src={workHistoryData.photograph}
-                    alt={workHistoryData.worker_name}
-                    className="w-24 h-24 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center">
-                    <User className="w-12 h-12 text-gray-400" />
+              <div className="flex items-center gap-8">
+                <div className="relative group">
+                  {workHistoryData.photograph ? (
+                    <img
+                      src={workHistoryData.photograph}
+                      alt={workHistoryData.worker_name}
+                      className="w-32 h-32 rounded-lg object-cover"
+                    />
+                  ) : (
+                    <div className="w-32 h-32 rounded-lg bg-gray-100 flex items-center justify-center">
+                      <User className="w-16 h-16 text-gray-400" />
+                    </div>
+                  )}
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex gap-2">
+                      <button
+                        onClick={startCamera}
+                        className="p-2 bg-white rounded-full shadow-lg hover:bg-gray-100"
+                        title="Take Photo"
+                      >
+                        <Camera className="h-5 w-5 text-gray-600" />
+                      </button>
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="p-2 bg-white rounded-full shadow-lg hover:bg-gray-100"
+                        title="Upload Photo"
+                      >
+                        <Upload className="h-5 w-5 text-gray-600" />
+                      </button>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileUpload}
+                        className="hidden"
+                      />
+                    </div>
                   </div>
-                )}
+                </div>
                 <div>
                   <h3 className="text-xl font-semibold text-gray-900">{workHistoryData.worker_name}</h3>
                   <div className="mt-2 grid grid-cols-2 gap-4">
@@ -589,7 +518,7 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
                   ))}
                   {!workHistoryData.data?.length && (
                     <tr>
-                      <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
+                      <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
                         No work history found
                       </td>
                     </tr>
@@ -610,12 +539,10 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
             worker_id: workerId,
             work_name: '',
             work_type: '',
-            location: '',
             start_date: '',
             end_date: '',
             site_id: '',
             organization_id: '',
-            avg_daily_wages: 0,
           });
         }}
         formData={formData}
@@ -631,6 +558,51 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
           workHistory={selectedWorkHistory}
           onClose={() => setSelectedWorkHistory(null)}
         />
+      )}
+
+      {showCamera && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full overflow-hidden">
+            <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+              <h3 className="text-lg font-medium text-gray-900">Take Photo</h3>
+              <button
+                type="button"
+                onClick={stopCamera}
+                className="text-gray-400 hover:text-gray-500"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <div className="p-4">
+              <div className="relative bg-black rounded-lg overflow-hidden">
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  className="w-full h-auto"
+                  style={{ transform: 'scaleX(-1)' }}
+                />
+                <canvas ref={photoRef} className="hidden" />
+                
+                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
+                  <button
+                    type="button"
+                    onClick={capturePhoto}
+                    className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-full shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    <Camera className="h-5 w-5 mr-2" />
+                    Capture Photo
+                  </button>
+                </div>
+              </div>
+              
+              <p className="mt-2 text-sm text-gray-500 text-center">
+                Position yourself in the frame and click the capture button
+              </p>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

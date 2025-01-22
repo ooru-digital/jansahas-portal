@@ -8,6 +8,9 @@ export interface LoginCredentials {
 export interface AuthTokens {
   access: string;
   refresh: string;
+  is_jansathi: boolean;
+  username: string;
+  email: string;
 }
 
 export const login = async (credentials: LoginCredentials): Promise<AuthTokens> => {

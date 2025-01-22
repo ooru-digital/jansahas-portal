@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, Camera, Upload, X, ChevronRight, Plus, Check } from 'lucide-react';
+import { ArrowLeft, Camera, Upload, X, ChevronRight, Plus } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import * as WorkerAPI from '../api/workers';
 import * as WorkHistoryAPI from '../api/workHistory';
@@ -33,12 +33,10 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
     worker_id: 0,
     work_name: '',
     work_type: '',
-    location: '',
     start_date: '',
     end_date: '',
     site_id: '',
     organization_id: '',
-    avg_daily_wages: 0,
   });
 
   const [organizations, setOrganizations] = useState<Organization[]>([]);
@@ -118,7 +116,7 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
     } else {
       setWorkHistoryData(prev => ({
         ...prev,
-        [name]: name === 'avg_daily_wages' ? parseFloat(value) || 0 : value
+        [name]: value
       }));
     }
   };
@@ -456,36 +454,6 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
               <option value="Part-time">Part-time</option>
               <option value="Contract">Contract</option>
             </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Location <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              name="location"
-              value={workHistoryData.location}
-              onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Average Daily Wages (₹) <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="number"
-              name="avg_daily_wages"
-              value={workHistoryData.avg_daily_wages}
-              onChange={handleInputChange}
-              min="0"
-              step="0.01"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
-            />
           </div>
 
           <div>

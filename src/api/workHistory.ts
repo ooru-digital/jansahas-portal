@@ -40,21 +40,17 @@ export interface CreateWorkHistoryData {
   worker_id: number;
   work_name: string;
   work_type: string;
-  location: string;
   start_date: string;
   end_date: string;
   site_id: string;
   organization_id: string;
-  avg_daily_wages: number;
 }
 
 export interface UpdateWorkHistoryData {
   work_name?: string;
   work_type?: string;
-  location?: string;
   start_date?: string;
   end_date?: string;
-  avg_daily_wages?: number;
 }
 
 export const createWorkHistory = async (data: CreateWorkHistoryData): Promise<WorkHistory> => {

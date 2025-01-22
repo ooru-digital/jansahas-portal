@@ -120,10 +120,6 @@ export default function WorkHistoryDetailModal({ workHistory, onClose }: WorkHis
                   <p className="text-sm text-gray-500">Working Days</p>
                   <p className="font-medium">{workHistory.number_of_working_days}</p>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-500">Average Daily Wages</p>
-                  <p className="font-medium">₹{workHistory.avg_daily_wages}</p>
-                </div>
               </div>
             </div>
 
@@ -164,13 +160,13 @@ export default function WorkHistoryDetailModal({ workHistory, onClose }: WorkHis
                 </div>
                 {workHistory.approved_date && (
                   <div>
-                    <p className="text-sm text-gray-500">Approved Date</p>
+                    <p className="text-sm text-gray-500">Approved At</p>
                     <p className="font-medium">{formatDate(workHistory.approved_date)}</p>
                   </div>
                 )}
                 {workHistory.rejected_date && (
                   <div>
-                    <p className="text-sm text-gray-500">Rejected Date</p>
+                    <p className="text-sm text-gray-500">Rejected At</p>
                     <p className="font-medium">{formatDate(workHistory.rejected_date)}</p>
                   </div>
                 )}

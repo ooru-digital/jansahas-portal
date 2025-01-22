@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Navigate, Outlet, NavLink, useLocation } from 'react-router-dom';
-import { Home, Users, CheckSquare, LogOut, Menu, X } from 'lucide-react';
+import { Navigate, Outlet, NavLink } from 'react-router-dom';
+import { Home, Users, CheckSquare, LogOut, Menu, X, ChevronDown } from 'lucide-react';
 
 interface DashboardLayoutProps {
   isAuthenticated: boolean;
@@ -9,7 +9,19 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ isAuthenticated, onLogout }: DashboardLayoutProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const location = useLocation();
+  const [showLogout, setShowLogout] = useState(false);
+
+  const userInfo = localStorage.getItem('tokens') 
+    ? JSON.parse(localStorage.getItem('tokens')!) 
+    : null;
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(word => word[0])
+      .join('')
+      .toUpperCase();
+  };
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
@@ -50,21 +62,41 @@ export default function DashboardLayout({ isAuthenticated, onLogout }: Dashboard
                       }`
                     }
                   >
-                    <Icon className="mr-3 h-5 w-5" />
+                    <Icon className="h-5 w-5 flex-shrink-0 mr-3" />
                     {item.name}
                   </NavLink>
                 );
               })}
             </nav>
           </div>
-          <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
-            <button
-              onClick={handleLogout}
-              className="group flex items-center px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-md w-full"
-            >
-              <LogOut className="mr-3 h-5 w-5" />
-              Logout
-            </button>
+          <div className="flex-shrink-0 border-t border-gray-200 p-4">
+            <div className="relative">
+              <button
+                onClick={() => setShowLogout(!showLogout)}
+                className="w-full group flex items-center px-2 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-md"
+              >
+                <div className="h-8 w-8 flex-shrink-0 mr-2 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium">
+                  {getInitials(userInfo?.username || '')}
+                </div>
+                <div className="flex-1 text-left">
+                  <p className="text-base font-medium">{userInfo?.username}</p>
+                  <p className="text-xs text-gray-500">{userInfo?.email}</p>
+                </div>
+                <ChevronDown className={`h-4 w-4 flex-shrink-0 transition-transform ${showLogout ? 'rotate-180' : ''}`} />
+              </button>
+              
+              {showLogout && (
+                <div className="absolute bottom-full left-0 right-0 mb-2 bg-white rounded-lg shadow-lg border border-gray-100">
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50"
+                  >
+                    <LogOut className="h-5 w-5 flex-shrink-0 mr-3" />
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -116,20 +148,40 @@ export default function DashboardLayout({ isAuthenticated, onLogout }: Dashboard
                         }`
                       }
                     >
-                      <Icon className="mr-3 h-5 w-5" />
+                      <Icon className="h-5 w-5 flex-shrink-0 mr-3" />
                       {item.name}
                     </NavLink>
                   );
                 })}
               </nav>
               <div className="flex-shrink-0 border-t border-gray-200 p-4">
-                <button
-                  onClick={handleLogout}
-                  className="group flex items-center px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-md w-full"
-                >
-                  <LogOut className="mr-3 h-5 w-5" />
-                  Logout
-                </button>
+                <div className="relative">
+                  <button
+                    onClick={() => setShowLogout(!showLogout)}
+                    className="w-full group flex items-center px-2 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-md"
+                  >
+                    <div className="h-8 w-8 flex-shrink-0 mr-2 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium">
+                      {getInitials(userInfo?.username || '')}
+                    </div>
+                    <div className="flex-1 text-left">
+                      <p className="text-base font-medium">{userInfo?.username}</p>
+                      <p className="text-xs text-gray-500">{userInfo?.email}</p>
+                    </div>
+                    <ChevronDown className={`h-4 w-4 flex-shrink-0 transition-transform ${showLogout ? 'rotate-180' : ''}`} />
+                  </button>
+                  
+                  {showLogout && (
+                    <div className="absolute bottom-full left-0 right-0 mb-2 bg-white rounded-lg shadow-lg border border-gray-100">
+                      <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50"
+                      >
+                        <LogOut className="h-5 w-5 flex-shrink-0 mr-3" />
+                        Logout
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>

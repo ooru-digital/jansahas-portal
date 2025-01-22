@@ -88,9 +88,8 @@ export default function EditWorkerModal({ worker, isOpen, onClose, onWorkerUpdat
                 type="text"
                 name="name"
                 value={formData.name}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 cursor-not-allowed"
+                disabled
               />
             </div>
 
@@ -135,11 +134,8 @@ export default function EditWorkerModal({ worker, isOpen, onClose, onWorkerUpdat
                 type="tel"
                 name="phone_number"
                 value={formData.phone_number}
-                onChange={handleInputChange}
-                pattern="[0-9]{10}"
-                title="Please enter a valid 10-digit phone number"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                required
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 cursor-not-allowed"
+                disabled
               />
             </div>
 

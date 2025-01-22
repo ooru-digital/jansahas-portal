@@ -23,12 +23,12 @@ export default function Login({ onLogin }: LoginProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const tokens = await auth.login({
+      const response = await auth.login({
         email: formData.email,
         password: formData.password,
       });
       toast.success('Login successful!');
-      localStorage.setItem('tokens', JSON.stringify(tokens));
+      localStorage.setItem('tokens', JSON.stringify(response));
       onLogin();
     } catch (error) {
       // Error will be handled by axios interceptor
