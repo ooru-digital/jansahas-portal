@@ -52,7 +52,7 @@ jobs:
         export NODE_OPTIONS=--max-old-space-size=4096
         CI=false npm run build
     
-     - name: Verify Build Output
+    - name: Verify Build Output
       run: |
         echo "Checking contents of the build directory:"
         ls -l build
