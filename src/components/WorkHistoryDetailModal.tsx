@@ -155,7 +155,7 @@ export default function WorkHistoryDetailModal({ workHistory, onClose }: WorkHis
                 <Clock className="h-5 w-5 text-gray-500" />
                 Status Information
               </h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
                   <p className="text-sm text-gray-500">Status</p>
                   <span className={`inline-flex px-3 py-1 text-sm font-medium rounded-full mt-1 ${getStatusColor(workHistory.status)}`}>
@@ -172,6 +172,18 @@ export default function WorkHistoryDetailModal({ workHistory, onClose }: WorkHis
                   <div>
                     <p className="text-sm text-gray-500">Rejected Date</p>
                     <p className="font-medium">{formatDate(workHistory.rejected_date)}</p>
+                  </div>
+                )}
+                {workHistory.status === 'approved' && (
+                  <div>
+                    <p className="text-sm text-gray-500">Approved By</p>
+                    <p className="font-medium">{workHistory.approved_by || 'NA'}</p>
+                  </div>
+                )}
+                {workHistory.status === 'rejected' && (
+                  <div>
+                    <p className="text-sm text-gray-500">Rejected By</p>
+                    <p className="font-medium">{workHistory.rejected_by || 'NA'}</p>
                   </div>
                 )}
                 <div>

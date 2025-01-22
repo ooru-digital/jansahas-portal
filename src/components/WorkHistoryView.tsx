@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Clock, CheckSquare, XCircle, Pencil, Trash2, Award, User, Plus, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import * as WorkHistoryAPI from '../api/workHistory';
@@ -14,62 +14,34 @@ interface WorkHistoryViewProps {
   onBack: () => void;
 }
 
-interface WorkHistoryFormModalProps {
+const WorkHistoryFormModal = ({ 
+  isOpen, 
+  onClose, 
+  formData, 
+  setFormData, 
+  organizations, 
+  sites, 
+  onSubmit, 
+  isEditing 
+}: {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: CreateWorkHistoryData) => Promise<void>;
-  initialData: CreateWorkHistoryData;
+  formData: CreateWorkHistoryData;
+  setFormData: React.Dispatch<React.SetStateAction<CreateWorkHistoryData>>;
   organizations: Organization[];
   sites: Site[];
+  onSubmit: (e: React.FormEvent) => Promise<void>;
   isEditing: boolean;
-  onOrganizationChange: (organizationId: string) => void;
-}
+}) => {
+  if (!isOpen) return null;
 
-const WorkHistoryFormModal = React.memo(({
-  isOpen,
-  onClose,
-  onSubmit,
-  initialData,
-  organizations,
-  sites,
-  isEditing,
-  onOrganizationChange,
-}: WorkHistoryFormModalProps) => {
-  const [formData, setFormData] = useState(initialData);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    setFormData(initialData);
-  }, [initialData]);
-
-  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: name === 'avg_daily_wages' ? parseFloat(value) || 0 : value
     }));
-
-    if (name === 'organization_id') {
-      onOrganizationChange(value);
-    }
-  }, [onOrganizationChange]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (isSubmitting) return;
-
-    try {
-      setIsSubmitting(true);
-      await onSubmit(formData);
-      onClose();
-    } catch (error) {
-      console.error('Form submission failed:', error);
-    } finally {
-      setIsSubmitting(false);
-    }
   };
-
-  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -81,14 +53,13 @@ const WorkHistoryFormModal = React.memo(({
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-500"
-            disabled={isSubmitting}
           >
             <X className="h-6 w-6" />
           </button>
         </div>
 
         <div className="p-6">
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={onSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -100,7 +71,6 @@ const WorkHistoryFormModal = React.memo(({
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
-                  disabled={isSubmitting}
                 >
                   <option value="">Select Organization</option>
                   {organizations.map(org => (
@@ -119,7 +89,7 @@ const WorkHistoryFormModal = React.memo(({
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
-                  disabled={!formData.organization_id || isSubmitting}
+                  disabled={!formData.organization_id}
                 >
                   <option value="">Select Site</option>
                   {sites.map(site => (
@@ -139,7 +109,6 @@ const WorkHistoryFormModal = React.memo(({
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
-                  disabled={isSubmitting}
                 />
               </div>
 
@@ -153,7 +122,6 @@ const WorkHistoryFormModal = React.memo(({
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
-                  disabled={isSubmitting}
                 >
                   <option value="">Select Work Type</option>
                   <option value="Full-time">Full-time</option>
@@ -173,7 +141,6 @@ const WorkHistoryFormModal = React.memo(({
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
-                  disabled={isSubmitting}
                 />
               </div>
 
@@ -190,7 +157,6 @@ const WorkHistoryFormModal = React.memo(({
                   step="0.01"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
-                  disabled={isSubmitting}
                 />
               </div>
 
@@ -205,7 +171,6 @@ const WorkHistoryFormModal = React.memo(({
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
-                  disabled={isSubmitting}
                 />
               </div>
 
@@ -220,7 +185,6 @@ const WorkHistoryFormModal = React.memo(({
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
-                  disabled={isSubmitting}
                 />
               </div>
             </div>
@@ -230,33 +194,22 @@ const WorkHistoryFormModal = React.memo(({
                 type="button"
                 onClick={onClose}
                 className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-                disabled={isSubmitting}
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
-                disabled={isSubmitting}
               >
-                {isSubmitting ? (
+                {isEditing ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                    {isEditing ? 'Updating...' : 'Adding...'}
+                    <Pencil className="h-5 w-5" />
+                    Update Work History
                   </>
                 ) : (
                   <>
-                    {isEditing ? (
-                      <>
-                        <Pencil className="h-5 w-5" />
-                        Update Work History
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="h-5 w-5" />
-                        Add Work History
-                      </>
-                    )}
+                    <Plus className="h-5 w-5" />
+                    Add Work History
                   </>
                 )}
               </button>
@@ -266,9 +219,7 @@ const WorkHistoryFormModal = React.memo(({
       </div>
     </div>
   );
-});
-
-WorkHistoryFormModal.displayName = 'WorkHistoryFormModal';
+};
 
 export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewProps) {
   const [workHistoryData, setWorkHistoryData] = useState<WorkHistoryResponse | null>(null);
@@ -335,44 +286,33 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: name === 'avg_daily_wages' ? parseFloat(value) || 0 : value,
-    }));
-  };
-
-  const handleFormSubmit = async (data: CreateWorkHistoryData) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
       if (editingHistory) {
-        await WorkHistoryAPI.updateWorkHistory(editingHistory.id, data);
+        await WorkHistoryAPI.updateWorkHistory(editingHistory.id, formData);
         toast.success('Work history updated successfully');
       } else {
-        await WorkHistoryAPI.createWorkHistory(data);
+        await WorkHistoryAPI.createWorkHistory(formData);
         toast.success('Work history added successfully');
       }
       fetchWorkHistory();
       setShowForm(false);
       setEditingHistory(null);
-      resetForm();
+      setFormData({
+        worker_id: workerId,
+        work_name: '',
+        work_type: '',
+        location: '',
+        start_date: '',
+        end_date: '',
+        site_id: '',
+        organization_id: '',
+        avg_daily_wages: 0,
+      });
     } catch (error) {
       toast.error(editingHistory ? 'Failed to update work history' : 'Failed to add work history');
     }
-  };
-
-  const resetForm = () => {
-    setFormData({
-      worker_id: workerId,
-      work_name: '',
-      work_type: '',
-      location: '',
-      start_date: '',
-      end_date: '',
-      site_id: '',
-      organization_id: '',
-      avg_daily_wages: 0,
-    });
   };
 
   const handleViewWorkHistoryDetail = async (workHistoryId: number) => {
@@ -397,23 +337,12 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
   };
 
   const handleEdit = (history: WorkHistory) => {
-    setFormData({
-      worker_id: workerId,
-      work_name: history.work_name,
-      work_type: history.work_type,
-      location: history.location,
-      start_date: new Date(history.start_date).toISOString().split('T')[0],
-      end_date: new Date(history.end_date).toISOString().split('T')[0],
-      site_id: history.site_id,
-      organization_id: history.organization_id,
-      avg_daily_wages: history.avg_daily_wages,
-    });
     setEditingHistory(history);
+    setFormData({
+      ...history,
+      worker_id: workerId,
+    });
     setShowForm(true);
-
-    if (history.organization_id) {
-      fetchSites(history.organization_id);
-    }
   };
 
   if (loading) {
@@ -466,9 +395,19 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
             <div className="flex items-center gap-4">
               <button
                 onClick={() => {
-                  setShowForm(true);
                   setEditingHistory(null);
-                  resetForm();
+                  setFormData({
+                    worker_id: workerId,
+                    work_name: '',
+                    work_type: '',
+                    location: '',
+                    start_date: '',
+                    end_date: '',
+                    site_id: '',
+                    organization_id: '',
+                    avg_daily_wages: 0,
+                  });
+                  setShowForm(true);
                 }}
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
               >
@@ -488,6 +427,7 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            {/* Worker Info */}
             <div className="bg-white p-6 rounded-lg shadow-sm">
               <div className="flex items-center gap-4">
                 {workHistoryData.photograph ? (
@@ -517,6 +457,7 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
               </div>
             </div>
 
+            {/* Address Information */}
             <div className="bg-white p-6 rounded-lg shadow-sm">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Address Information</h3>
               <div className="space-y-4">
@@ -531,6 +472,7 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
               </div>
             </div>
 
+            {/* Working Days Summary */}
             <div className="bg-white p-6 rounded-lg shadow-sm">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Working Days Summary</h3>
               <div className="grid grid-cols-2 gap-4">
@@ -546,6 +488,7 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
             </div>
           </div>
 
+          {/* Work History Table */}
           <div className="bg-white rounded-lg shadow-sm overflow-hidden">
             <div className="p-6 border-b border-gray-200">
               <h2 className="text-lg font-semibold text-gray-900">Work History</h2>
@@ -555,11 +498,12 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
                 <thead className="bg-gray-50">
                   <tr>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Work Name</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Site</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Working Days</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Approved By</th>
                     <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
@@ -574,7 +518,7 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
                         <div className="text-sm font-medium text-gray-900">{history.work_name}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-500">{history.work_type}</div>
+                        <div className="text-sm text-gray-500">{history.site}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-500">{history.location}</div>
@@ -612,8 +556,11 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
                           )}
                         </div>
                       </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-500">{history.approved_by || 'NA'}</div>
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        {history.status === 'pending' && (
+                        {history.status === 'pending' ? (
                           <>
                             <button
                               onClick={(e) => {
@@ -634,13 +581,15 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
                               <Trash2 className="h-5 w-5" />
                             </button>
                           </>
+                        ) : (
+                          <span className="text-gray-500">NA</span>
                         )}
                       </td>
                     </tr>
                   ))}
                   {!workHistoryData.data?.length && (
                     <tr>
-                      <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
+                      <td colSpan={8} className="px-6 py-4 text-center text-gray-500">
                         No work history found
                       </td>
                     </tr>
@@ -657,18 +606,24 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
         onClose={() => {
           setShowForm(false);
           setEditingHistory(null);
-          resetForm();
+          setFormData({
+            worker_id: workerId,
+            work_name: '',
+            work_type: '',
+            location: '',
+            start_date: '',
+            end_date: '',
+            site_id: '',
+            organization_id: '',
+            avg_daily_wages: 0,
+          });
         }}
-        onSubmit={handleFormSubmit}
-        initialData={formData}
+        formData={formData}
+        setFormData={setFormData}
         organizations={organizations}
         sites={sites}
+        onSubmit={handleSubmit}
         isEditing={!!editingHistory}
-        onOrganizationChange={(organizationId) => {
-          if (organizationId) {
-            fetchSites(organizationId);
-          }
-        }}
       />
 
       {selectedWorkHistory && (
