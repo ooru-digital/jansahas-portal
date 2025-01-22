@@ -52,19 +52,21 @@ jobs:
         export NODE_OPTIONS=--max-old-space-size=4096
         CI=false npm run build
 
-    - name: Copy file via ssh key
-      uses: appleboy/scp-action@v0.1.7
-      with:
-        host: ${{ inputs.host }}
-        username: ${{ inputs.username }}
-        port: 22
-        key: ${{ secrets.ssh_key }}
-        source: dist/*
-        target: /var/www/jansahas-web/
-        strip_components: 1
-        debug: true
-      env:
-        PATH: /usr/bin:/bin:$JAVA_HOME/bin:$PATH
+    - name: Debug SCP
+      run: |
+        scp -v -i ${{ secrets.SSH_PRIVATE_KEY }} dist/* root@164.52.195.213:/var/www/jansahas-web/
+
+    # - name: Copy file via ssh key
+    #   uses: appleboy/scp-action@v0.1.7
+    #   with:
+    #     host: ${{ inputs.host }}
+    #     username: ${{ inputs.username }}
+    #     port: 22
+    #     key: ${{ secrets.ssh_key }}
+    #     source: dist/*
+    #     target: /var/www/jansahas-web/
+    #     strip_components: 1
+    #     debug: true
           
     # - name: Discord notifications on success
     #   if: success()
