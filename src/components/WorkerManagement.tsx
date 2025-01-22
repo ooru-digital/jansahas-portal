@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Search, Plus, Upload, History, Trash2, Pencil, User } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ChevronRight, Search, Plus, Upload, History, Trash2, Pencil, User } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import * as WorkerAPI from '../api/workers';
@@ -19,10 +19,10 @@ export default function WorkerManagement() {
 
   useEffect(() => {
     fetchWorkers();
-    // Get isJansathi value from localStorage
-    const tokens = localStorage.getItem('tokens');
-    if (tokens) {
-      const { is_jansathi } = JSON.parse(tokens);
+    // Get isJansathi value from userInfo
+    const userInfoStr = localStorage.getItem('userInfo');
+    if (userInfoStr) {
+      const { is_jansathi } = JSON.parse(userInfoStr);
       setIsJansathi(is_jansathi);
     }
   }, []);
