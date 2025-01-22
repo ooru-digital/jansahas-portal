@@ -30,40 +30,6 @@ jobs:
       with:
         ref: ${{ inputs.branch }}
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '21.x'
-    
-    - name: Node Version
-      run: node --version
-      
-    - name: NPM Version
-      run: npm --version
-
-    # - name: Update Browserslist Database
-    #   run: npx update-browserslist-db@latest --force
-
-    # - name: Install dependencies
-    #   run: npm install
-
-    # - name: Build Jansahas App
-    #   run: |
-    #     export NODE_OPTIONS=--max-old-space-size=4096
-    #     CI=false npm run build
-
-    # - name: Copy file via ssh key
-    #   uses: appleboy/scp-action@v0.1.7
-    #   with:
-    #     host: ${{ inputs.host }}
-    #     username: ${{ inputs.username }}
-    #     port: 22
-    #     key: ${{ secrets.ssh_key }}
-    #     source: dist/*
-    #     target: /var/www/jansahas-web/
-    #     strip_components: 1
-    #     debug: true
-
     - name: Deploy to Server
       uses: appleboy/ssh-action@master
       with:
