@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { ChevronRight, Search, Plus, Upload, History, Trash2, Pencil, User } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, Plus, Upload, History, Trash2, Pencil, User } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import * as WorkerAPI from '../api/workers';
@@ -113,7 +113,7 @@ export default function WorkerManagement() {
                   className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
                 >
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Single Worker
+                  Add Worker
                 </button>
               </div>
             </div>

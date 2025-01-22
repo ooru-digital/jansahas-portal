@@ -44,6 +44,7 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [showCamera, setShowCamera] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const [dateError, setDateError] = useState<string>('');
   const videoRef = useRef<HTMLVideoElement>(null);
   const photoRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -114,6 +115,36 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
         [name]: value
       }));
     } else {
+      if (name === 'start_date' || name === 'end_date') {
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+        const selectedDate = new Date(value);
+        
+        if (name === 'start_date') {
+          // Validate start date is not older than 1 year
+          if (selectedDate < oneYearAgo) {
+            setDateError('Start date cannot be older than 1 year from today');
+            return;
+          }
+          
+          // Validate start date is not after end date
+          if (workHistoryData.end_date && selectedDate > new Date(workHistoryData.end_date)) {
+            setDateError('Start date cannot be after end date');
+            return;
+          }
+        }
+        
+        if (name === 'end_date') {
+          // Validate end date is not before start date
+          if (workHistoryData.start_date && selectedDate < new Date(workHistoryData.start_date)) {
+            setDateError('End date cannot be before start date');
+            return;
+          }
+        }
+        
+        setDateError('');
+      }
+
       setWorkHistoryData(prev => ({
         ...prev,
         [name]: value
@@ -207,6 +238,23 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
 
   const handleWorkHistorySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Additional validation before submitting
+    const startDate = new Date(workHistoryData.start_date);
+    const endDate = new Date(workHistoryData.end_date);
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+    if (startDate < oneYearAgo) {
+      setDateError('Start date cannot be older than 1 year from today');
+      return;
+    }
+
+    if (startDate > endDate) {
+      setDateError('Start date cannot be after end date');
+      return;
+    }
+
     try {
       await WorkHistoryAPI.createWorkHistory(workHistoryData);
       toast.success('Work history added successfully');
@@ -214,6 +262,15 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
     } catch (error) {
       toast.error('Failed to add work history');
     }
+  };
+
+  // Calculate date limits
+  const oneYearAgo = new Date();
+  oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+  const today = new Date();
+
+  const formatDateForInput = (date: Date) => {
+    return date.toISOString().split('T')[0];
   };
 
   function renderWorkerForm() {
@@ -465,6 +522,8 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
               name="start_date"
               value={workHistoryData.start_date}
               onChange={handleInputChange}
+              min={formatDateForInput(oneYearAgo)}
+              max={formatDateForInput(today)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
             />
@@ -479,11 +538,19 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
               name="end_date"
               value={workHistoryData.end_date}
               onChange={handleInputChange}
+              min={workHistoryData.start_date || formatDateForInput(oneYearAgo)}
+              max={formatDateForInput(today)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
             />
           </div>
         </div>
+
+        {dateError && (
+          <div className="text-red-500 text-sm mt-2">
+            {dateError}
+          </div>
+        )}
 
         <div className="flex justify-end gap-4">
           <button
@@ -496,6 +563,7 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
           <button
             type="submit"
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+            disabled={!!dateError}
           >
             <Plus className="h-5 w-5" />
             Add Work History
