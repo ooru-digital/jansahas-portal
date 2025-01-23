@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import AuthLayout from './layouts/AuthLayout';
@@ -7,12 +7,27 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Workers from './pages/Workers';
 import WorkerDetails from './pages/WorkerDetails';
-import Approvals from './pages/Approvals';
 import AddWorker from './pages/AddWorker';
 import BulkUpload from './pages/BulkUpload';
+import Approvals from './pages/Approvals';
 
 export default function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('tokens'));
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    // Check authentication status when the app loads
+    const tokens = localStorage.getItem('tokens');
+    setIsAuthenticated(!!tokens);
+  }, []);
+
+  // Show loading state while checking authentication
+  if (isAuthenticated === null) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
     <Router>
@@ -42,8 +57,27 @@ export default function App() {
           <Route path="/approvals" element={<Approvals />} />
         </Route>
 
+        {/* Redirect root path to login or dashboard based on auth state */}
+        <Route 
+          path="/" 
+          element={
+            <Navigate 
+              to={isAuthenticated ? "/dashboard" : "/login"} 
+              replace 
+            />
+          } 
+        />
+
         {/* Redirect all other routes */}
-        <Route path="*" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />} />
+        <Route 
+          path="*" 
+          element={
+            <Navigate 
+              to={isAuthenticated ? "/dashboard" : "/login"} 
+              replace 
+            />
+          } 
+        />
       </Routes>
       
       <Toaster 

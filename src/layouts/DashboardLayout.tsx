@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Navigate, Outlet, NavLink, useLocation } from 'react-router-dom';
+import { Navigate, Outlet, NavLink } from 'react-router-dom';
 import { Home, Users, CheckSquare, LogOut, Menu, X, ChevronDown } from 'lucide-react';
 import Footer from '../components/Footer';
 
