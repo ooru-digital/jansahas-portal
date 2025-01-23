@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { Clock, CheckCircle2, XCircle, Check, X, User, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { CheckCircle2, XCircle, Check, X, User, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import { getPendingApprovals, bulkUpdateApprovalStatus, getWorkHistoryDetail, WorkDetail, WorkHistoryDetail, ApprovalsResponse } from '../api/dashboard';
+import { getPendingApprovals, bulkUpdateApprovalStatus, getWorkHistoryDetail, WorkHistoryDetail, ApprovalsResponse } from '../api/dashboard';
 import WorkHistoryDetailModal from './WorkHistoryDetailModal';
 
 export default function Approvals() {

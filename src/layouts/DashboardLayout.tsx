@@ -8,7 +8,7 @@ interface DashboardLayoutProps {
 }
 
 interface UserInfo {
-  username: string;
+  name: string;
   email: string;
   is_jansathi: boolean;
 }
@@ -88,10 +88,10 @@ export default function DashboardLayout({ isAuthenticated, onLogout }: Dashboard
                 className="w-full group flex items-center px-2 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-md"
               >
                 <div className="h-8 w-8 flex-shrink-0 mr-2 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium">
-                  {userInfo?.username ? getInitials(userInfo.username) : ''}
+                  {userInfo?.name ? getInitials(userInfo.name) : ''}
                 </div>
                 <div className="flex-1 text-left">
-                  <p className="text-base font-medium">{userInfo?.username}</p>
+                  <p className="text-base font-medium">{userInfo?.name}</p>
                   <p className="text-xs text-gray-500">{userInfo?.email}</p>
                 </div>
                 <ChevronDown className={`h-4 w-4 flex-shrink-0 transition-transform ${showLogout ? 'rotate-180' : ''}`} />
@@ -178,10 +178,10 @@ export default function DashboardLayout({ isAuthenticated, onLogout }: Dashboard
                     className="w-full group flex items-center px-2 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-md"
                   >
                     <div className="h-8 w-8 flex-shrink-0 mr-2 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium">
-                      {userInfo?.username ? getInitials(userInfo.username) : ''}
+                      {userInfo?.name ? getInitials(userInfo.name) : ''}
                     </div>
                     <div className="flex-1 text-left">
-                      <p className="text-base font-medium">{userInfo?.username}</p>
+                      <p className="text-base font-medium">{userInfo?.name}</p>
                       <p className="text-xs text-gray-500">{userInfo?.email}</p>
                     </div>
                     <ChevronDown className={`h-4 w-4 flex-shrink-0 transition-transform ${showLogout ? 'rotate-180' : ''}`} />

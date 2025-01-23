@@ -9,7 +9,7 @@ export interface AuthTokens {
   access: string;
   refresh: string;
   is_jansathi: boolean;
-  username: string;
+  name: string;
   email: string;
 }
 

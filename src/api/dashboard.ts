@@ -78,7 +78,7 @@ export const getWorkHistoryDetail = async (id: number): Promise<WorkHistoryDetai
 };
 
 export const getPendingApprovals = async (url?: string): Promise<ApprovalsResponse> => {
-  const endpoint = url || '/approvals/?limit=5&offset=0';
+  const endpoint = url || '/approvals/?limit=10&offset=0';
   const response = await api.get<ApprovalsResponse>(endpoint);
   return response.data;
 };
