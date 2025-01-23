@@ -113,38 +113,43 @@ export default function DashboardLayout({ isAuthenticated, onLogout }: Dashboard
         </div>
       </div>
 
-      {/* Mobile menu button */}
+      {/* Mobile menu button and header */}
       <div className="md:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200">
-        <div className="flex items-center justify-between px-4 py-3">
-          <h1 className="text-xl font-bold text-gray-900">Jansahas Portal</h1>
-          <button
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="text-gray-500 hover:text-gray-600"
-          >
-            {isMobileMenuOpen ? (
-              <X className="h-6 w-6" />
-            ) : (
-              <Menu className="h-6 w-6" />
-            )}
-          </button>
+        <div className="flex items-center justify-between h-16 px-4">
+          <div className="flex items-center">
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="text-gray-500 hover:text-gray-600 p-2 -ml-2"
+            >
+              {isMobileMenuOpen ? (
+                <X className="h-6 w-6" />
+              ) : (
+                <Menu className="h-6 w-6" />
+              )}
+            </button>
+            <h1 className="ml-2 text-lg font-bold text-gray-900 truncate">
+              {navigation.find(item => item.path === location.pathname)?.name || 'Jansahas Portal'}
+            </h1>
+          </div>
         </div>
       </div>
 
       {/* Mobile menu */}
       {isMobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 z-40 bg-black bg-opacity-50">
-          <div className="fixed inset-y-0 left-0 w-64 bg-white">
+        <div className="md:hidden fixed inset-0 z-40">
+          <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setIsMobileMenuOpen(false)} />
+          <div className="fixed inset-y-0 left-0 w-64 bg-white shadow-lg">
             <div className="flex flex-col h-full">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
-                <h1 className="text-xl font-bold text-gray-900">Jansahas Portal</h1>
+              <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
+                <h1 className="text-lg font-bold text-gray-900">Jansahas Portal</h1>
                 <button
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="text-gray-500 hover:text-gray-600"
+                  className="text-gray-500 hover:text-gray-600 p-2"
                 >
                   <X className="h-6 w-6" />
                 </button>
               </div>
-              <nav className="flex-1 px-2 py-4 space-y-1">
+              <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
                 {navigation.map((item) => {
                   const Icon = item.icon;
                   return (
@@ -203,7 +208,7 @@ export default function DashboardLayout({ isAuthenticated, onLogout }: Dashboard
       {/* Main content */}
       <div className="md:pl-64 flex flex-col flex-1">
         <main className="flex-1">
-          <div className="py-6">
+          <div className="pt-16 md:pt-0">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
               <Outlet />
             </div>
