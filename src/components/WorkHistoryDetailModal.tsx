@@ -1,5 +1,4 @@
-import React from 'react';
-import { X, User, MapPin, Briefcase, Calendar, Clock } from 'lucide-react';
+import { X, User, MapPin, Briefcase, Clock } from 'lucide-react';
 import type { WorkHistoryDetail } from '../api/dashboard';
 
 interface WorkHistoryDetailModalProps {
@@ -9,7 +8,7 @@ interface WorkHistoryDetailModalProps {
 
 export default function WorkHistoryDetailModal({ workHistory, onClose }: WorkHistoryDetailModalProps) {
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString();
+    return new Date(dateString).toLocaleDateString('en-GB');
   };
 
   const getStatusColor = (status: string) => {

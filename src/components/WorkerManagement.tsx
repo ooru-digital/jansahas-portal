@@ -1,11 +1,15 @@
-import { useState, useEffect } from 'react';
-import { ChevronRight, Search, Plus, Upload, Trash2, Pencil, User, ChevronLeft } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ChevronRight, Search, Plus, Upload, Trash2, Pencil, User, ChevronLeft, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import * as WorkerAPI from '../api/workers';
 import type { Worker, WorkersResponse } from '../api/workers';
 import EditWorkerModal from './EditWorkerModal';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
+
+const maskPhoneNumber = (phone: string) => {
+  return phone.replace(/(\d{2})(\d{4})(\d{4})/, '$1****$3');
+};
 
 export default function WorkerManagement() {
   const navigate = useNavigate();
@@ -17,6 +21,7 @@ export default function WorkerManagement() {
   const [editingWorker, setEditingWorker] = useState<Worker | null>(null);
   const [isJansathi, setIsJansathi] = useState<boolean>(false);
   const [currentUrl, setCurrentUrl] = useState<string | null>(null);
+  const [showPhoneNumbers, setShowPhoneNumbers] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     fetchWorkers();
@@ -86,6 +91,17 @@ export default function WorkerManagement() {
       const url = new URL(workersData.previous);
       fetchWorkers(url.pathname + url.search);
     }
+  };
+
+  const togglePhoneVisibility = (workerId: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const newShowPhoneNumbers = new Set(showPhoneNumbers);
+    if (newShowPhoneNumbers.has(workerId)) {
+      newShowPhoneNumbers.delete(workerId);
+    } else {
+      newShowPhoneNumbers.add(workerId);
+    }
+    setShowPhoneNumbers(newShowPhoneNumbers);
   };
 
   const filteredWorkers = workersData?.results.filter(worker => {
@@ -193,7 +209,27 @@ export default function WorkerManagement() {
                             <div className="text-sm text-gray-500">{worker.gender}</div>
                           </td>
                           <td className="px-4 py-3">
-                            <div className="text-sm text-gray-500">{worker.phone_number}</div>
+                            <div className="text-sm text-gray-500 flex items-center gap-2">
+                              {worker.phone_number ? (
+                                <>
+                                  {showPhoneNumbers.has(worker.id) 
+                                    ? worker.phone_number 
+                                    : maskPhoneNumber(worker.phone_number)}
+                                  <button
+                                    onClick={(e) => togglePhoneVisibility(worker.id, e)}
+                                    className="text-gray-400 hover:text-gray-600"
+                                  >
+                                    {showPhoneNumbers.has(worker.id) ? (
+                                      <EyeOff className="h-4 w-4" />
+                                    ) : (
+                                      <Eye className="h-4 w-4" />
+                                    )}
+                                  </button>
+                                </>
+                              ) : (
+                                'N/A'
+                              )}
+                            </div>
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex items-center justify-center space-x-3">

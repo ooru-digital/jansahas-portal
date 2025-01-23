@@ -269,7 +269,7 @@ export default function Approvals() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-500">
-                          {new Date(approval.start_date).toLocaleDateString()}
+                          {new Date(approval.start_date).toLocaleDateString('en-GB')}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -277,7 +277,7 @@ export default function Approvals() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-500">
-                          {new Date(approval.created_at).toLocaleDateString()}
+                          {new Date(approval.created_at).toLocaleDateString('en-GB')}
                         </div>
                       </td>
                       {!isJansathi && (

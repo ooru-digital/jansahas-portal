@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Plus, Award, User, Camera, Upload, X, Pencil, Trash2, Clock, Info } from 'lucide-react';
+import { ArrowLeft, Plus, Award, User, Camera, Upload, X, Pencil, Trash2, Clock, Info, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import * as WorkHistoryAPI from '../api/workHistory';
 import * as OrganizationsAPI from '../api/organizations';
@@ -16,6 +16,10 @@ interface WorkHistoryViewProps {
   onBack: () => void;
 }
 
+const maskPhoneNumber = (phone: string) => {
+  return phone.replace(/(\d{2})(\d{4})(\d{4})/, '$1****$3');
+};
+
 export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewProps) {
   const [workHistoryData, setWorkHistoryData] = useState<WorkHistoryResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -27,7 +31,7 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
   const [selectedWorkHistory, setSelectedWorkHistory] = useState<WorkHistoryDetail | null>(null);
   const [showCamera, setShowCamera] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [showPhoneNumber, setShowPhoneNumber] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const photoRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -380,6 +384,30 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
                       <p className="text-sm text-gray-500">Gender</p>
                       <p className="text-sm font-medium text-gray-900">{workHistoryData.sex || '-'}</p>
                     </div>
+                    <div className="col-span-2">
+                      <p className="text-sm text-gray-500">Phone Number</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium text-gray-900">
+                          {workHistoryData.phone_number 
+                            ? (showPhoneNumber 
+                                ? workHistoryData.phone_number 
+                                : maskPhoneNumber(workHistoryData.phone_number))
+                            : '-'}
+                        </p>
+                        {workHistoryData.phone_number && (
+                          <button
+                            onClick={() => setShowPhoneNumber(!showPhoneNumber)}
+                            className="text-gray-400 hover:text-gray-600"
+                          >
+                            {showPhoneNumber ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -453,7 +481,7 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
                       </td> 
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">
-                          {new Date(history.start_date).toLocaleDateString()}
+                          {new Date(history.start_date).toLocaleDateString('en-GB')}
                         </div>
                       </td>                     
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -473,13 +501,13 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
                           {history.approved_date && (
                             <div className="text-xs text-gray-500 flex items-center">
                               <Clock className="h-3 w-3 mr-1" />
-                              {new Date(history.approved_date).toLocaleDateString()}
+                              {new Date(history.approved_date).toLocaleDateString('en-GB')}
                             </div>
                           )}
                           {history.rejected_date && (
                             <div className="text-xs text-gray-500 flex items-center">
                               <Clock className="h-3 w-3 mr-1" />
-                              {new Date(history.rejected_date).toLocaleDateString()}
+                              {new Date(history.rejected_date).toLocaleDateString('en-GB')}
                             </div>
                           )}
                         </div>

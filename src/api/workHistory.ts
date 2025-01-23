@@ -34,6 +34,7 @@ export interface WorkHistoryResponse {
   total_no_of_approved_working_days: number;
   age: string;
   sex: string;
+  phone_number: string;
   photograph: string | null;
 }
 

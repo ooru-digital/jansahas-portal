@@ -69,7 +69,7 @@ const WorkList = ({ title, works, icon: Icon, colorClass, onWorkClick }: {
               </td>
               <td className="py-4 text-center">
                 <p className="text-sm text-gray-500">
-                  {new Date(work.created_at).toLocaleDateString()}
+                  {new Date(work.created_at).toLocaleDateString('en-GB')}
                 </p>
               </td>
               <td className="py-4">
@@ -131,7 +131,7 @@ const ListModal: React.FC<ListModalProps> = ({ isOpen, onClose, title, items }) 
                       {item.name}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(item.created_at).toLocaleDateString()}
+                      {new Date(item.created_at).toLocaleDateString('en-GB')}
                     </td>
                   </tr>
                 ))}
