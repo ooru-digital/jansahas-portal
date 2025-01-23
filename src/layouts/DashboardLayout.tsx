@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Navigate, Outlet, NavLink, useLocation } from 'react-router-dom';
 import { Home, Users, CheckSquare, LogOut, Menu, X, ChevronDown } from 'lucide-react';
+import Footer from '../components/Footer';
 
 interface DashboardLayoutProps {
   isAuthenticated: boolean;
@@ -17,8 +18,7 @@ export default function DashboardLayout({ isAuthenticated, onLogout }: Dashboard
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showLogout, setShowLogout] = useState(false);
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
-  const location = useLocation();
-
+  
   useEffect(() => {
     const userInfoStr = localStorage.getItem('userInfo');
     if (userInfoStr) {
@@ -56,7 +56,11 @@ export default function DashboardLayout({ isAuthenticated, onLogout }: Dashboard
       <div className="hidden md:flex md:flex-col md:w-64 md:fixed md:inset-y-0 bg-white border-r border-gray-200">
         <div className="flex flex-col flex-grow pt-5 overflow-y-auto">
           <div className="flex items-center flex-shrink-0 px-4">
-            <h1 className="text-xl font-bold text-gray-900">Jansahas Portal</h1>
+            <img 
+              src="/worker-registry-logo.png" 
+              alt="Worker Registry Logo" 
+              className="w-auto h-auto max-h-[48px] max-w-[100px] sm:max-h-[60px] sm:max-w-[150px] lg:max-h-[80px] lg:max-w-[200px]" 
+            />
           </div>
           <div className="mt-8 flex-grow flex flex-col">
             <nav className="flex-1 px-2 space-y-1">
@@ -127,9 +131,11 @@ export default function DashboardLayout({ isAuthenticated, onLogout }: Dashboard
                 <Menu className="h-6 w-6" />
               )}
             </button>
-            <h1 className="ml-2 text-lg font-bold text-gray-900 truncate">
-              {navigation.find(item => item.path === location.pathname)?.name || 'Jansahas Portal'}
-            </h1>
+            <img 
+              src="/worker-registry-logo.png" 
+              alt="Worker Registry Logo" 
+              className="w-auto h-auto max-h-[40px] max-w-[150px] sm:max-h-[50px] sm:max-w-[200px]" 
+            />
           </div>
         </div>
       </div>
@@ -141,7 +147,11 @@ export default function DashboardLayout({ isAuthenticated, onLogout }: Dashboard
           <div className="fixed inset-y-0 left-0 w-64 bg-white shadow-lg">
             <div className="flex flex-col h-full">
               <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
-                <h1 className="text-lg font-bold text-gray-900">Jansahas Portal</h1>
+                <img 
+                  src="/worker-registry-logo.png" 
+                  alt="Worker Registry Logo" 
+                  className="w-auto h-auto max-h-[40px] max-w-[150px] sm:max-h-[50px] sm:max-w-[200px]" 
+                />
                 <button
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="text-gray-500 hover:text-gray-600 p-2"
@@ -209,11 +219,14 @@ export default function DashboardLayout({ isAuthenticated, onLogout }: Dashboard
       <div className="md:pl-64 flex flex-col flex-1">
         <main className="flex-1">
           <div className="pt-16 md:pt-0">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 pb-16">
               <Outlet />
             </div>
           </div>
         </main>
+        <div className="md:pl-0">
+          <Footer />
+        </div>
       </div>
     </div>
   );

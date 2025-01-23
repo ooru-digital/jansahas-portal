@@ -215,8 +215,8 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
 
     // Validate and convert age to number
     const ageNum = parseInt(formData.age, 10);
-    if (isNaN(ageNum) || ageNum < 18 || ageNum > 100) {
-      toast.error('Please enter a valid age between 18 and 100');
+    if (isNaN(ageNum) || ageNum < 18 || ageNum > 60) {
+      toast.error('Please enter a valid age between 18 and 60');
       return;
     }
 
@@ -301,7 +301,7 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
               value={formData.age}
               onChange={handleInputChange}
               min="18"
-              max="100"
+              max="60"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
             />
