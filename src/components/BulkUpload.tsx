@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Download, ArrowLeft, FileUp, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import api from '../api/axiosInstance';
 import * as XLSX from 'xlsx';
+import type { Site } from '../api/sites';
 
 interface TableData {
   headers: string[];
@@ -18,10 +19,41 @@ export default function BulkUpload({ onBack }: BulkUploadProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [sites, setSites] = useState<Site[]>([]);
+  const [selectedSite, setSelectedSite] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchSites();
+  }, []);
+
+  // Set the default value of `selectedSite` when `sites` changes
+  useEffect(() => {
+    if (sites.length > 0) {
+      setSelectedSite(sites[0].name); // Set to the first site's name
+    }
+  }, [sites]);
+
+  const fetchSites = async () => {
+    try {
+      const response = await api.get('/site/all/');
+      setSites(response.data);
+      setLoading(false);
+    } catch (error) {
+      toast.error('Failed to fetch sites');
+      setLoading(false);
+    }
+  };
 
   const handleDownloadSampleCSV = async () => {
     try {
-      const response = await api.get('/worker/create/bulk', {
+      // Build the URL based on whether a site is selected
+      let apiUrl = '/worker/create/bulk';
+      if (selectedSite) {
+        apiUrl += `?site_name=${encodeURIComponent(selectedSite)}`;
+      }
+
+      const response = await api.get(apiUrl, {
         responseType: 'blob'
       });
       
@@ -59,14 +91,14 @@ export default function BulkUpload({ onBack }: BulkUploadProps) {
       }
 
       // Create and trigger download
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const downloadUrl = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
-      link.href = url;
+      link.href = downloadUrl;
       link.setAttribute('download', `${filename}${extension}`);
       document.body.appendChild(link);
       link.click();
       link.remove();
-      window.URL.revokeObjectURL(url);
+      window.URL.revokeObjectURL(downloadUrl);
       
       toast.success('Sample template downloaded successfully');
     } catch (error) {
@@ -193,6 +225,14 @@ export default function BulkUpload({ onBack }: BulkUploadProps) {
     setError(null);
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="border-b border-gray-200 bg-white">
@@ -219,13 +259,36 @@ export default function BulkUpload({ onBack }: BulkUploadProps) {
                   <p className="text-gray-600 mb-4">
                     Download our template to ensure your worker data is formatted correctly.
                   </p>
-                  <button
-                    onClick={handleDownloadSampleCSV}
-                    className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    <Download className="h-5 w-5 mr-2" />
-                    Download Template
-                  </button>
+                  <div className="space-y-4">
+                    <div className="max-w-xs">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Select Site
+                      </label>
+                      <select
+                        value={selectedSite}
+                        onChange={(e) => setSelectedSite(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        disabled={sites.length === 0} // Disable the dropdown if no options are available
+                      >
+                        {sites.length > 0 ? (
+                          sites.map((site) => (
+                            <option key={site.id} value={site.name}>
+                              {site.name}
+                            </option>
+                          ))
+                        ) : (
+                          <option value="">No sites available</option>
+                        )}
+                      </select>
+                    </div>
+                    <button
+                      onClick={handleDownloadSampleCSV}
+                      className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    >
+                      <Download className="h-5 w-5 mr-2" />
+                      Download Template
+                    </button>
+                  </div>
                 </div>
 
                 <div className="border-t border-gray-200 pt-6">
