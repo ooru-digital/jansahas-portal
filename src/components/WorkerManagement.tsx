@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ChevronRight, Search, Plus, Upload, History, Trash2, Pencil, User, ChevronLeft } from 'lucide-react';
+import { ChevronRight, Search, Plus, Upload, Trash2, Pencil, User, ChevronLeft } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import * as WorkerAPI from '../api/workers';
@@ -155,12 +155,12 @@ export default function WorkerManagement() {
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Photo</th>
-                        <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                        <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Age</th>
-                        <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gender</th>
-                        <th scope="col" className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone Number</th>
-                        <th scope="col" className="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Photo</th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Age</th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gender</th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone Number</th>
+                        <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
@@ -170,7 +170,7 @@ export default function WorkerManagement() {
                           className="hover:bg-gray-50 cursor-pointer"
                           onClick={() => handleRowClick(worker.id)}
                         >
-                          <td className="px-3 py-4">
+                          <td className="px-4 py-3">
                             {worker.photograph ? (
                               <img
                                 src={worker.photograph}
@@ -183,26 +183,26 @@ export default function WorkerManagement() {
                               </div>
                             )}
                           </td>
-                          <td className="px-3 py-4">
+                          <td className="px-4 py-3">
                             <div className="text-sm font-medium text-gray-900">{worker.name}</div>
                           </td>
-                          <td className="px-3 py-4">
+                          <td className="px-4 py-3">
                             <div className="text-sm text-gray-500">{worker.age}</div>
                           </td>
-                          <td className="px-3 py-4">
+                          <td className="px-4 py-3">
                             <div className="text-sm text-gray-500">{worker.gender}</div>
                           </td>
-                          <td className="px-3 py-4">
+                          <td className="px-4 py-3">
                             <div className="text-sm text-gray-500">{worker.phone_number}</div>
                           </td>
-                          <td className="px-3 py-4 whitespace-nowrap">
-                            <div className="flex items-center justify-center space-x-2">
+                          <td className="px-4 py-3">
+                            <div className="flex items-center justify-center space-x-3">
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleEditWorker(worker);
                                 }}
-                                className="text-blue-600 hover:text-blue-900 p-1 rounded-full hover:bg-blue-50"
+                                className="text-blue-600 hover:text-blue-900 p-1.5 rounded-full hover:bg-blue-50"
                                 title="Edit Worker"
                               >
                                 <Pencil className="h-5 w-5" />
@@ -210,19 +210,9 @@ export default function WorkerManagement() {
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleRowClick(worker.id);
-                                }}
-                                className="text-purple-600 hover:text-purple-900 p-1 rounded-full hover:bg-purple-50"
-                                title="Work History"
-                              >
-                                <History className="h-5 w-5" />
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
                                   handleDeleteWorker(worker.id);
                                 }}
-                                className="text-red-600 hover:text-red-900 p-1 rounded-full hover:bg-red-50"
+                                className="text-red-600 hover:text-red-900 p-1.5 rounded-full hover:bg-red-50"
                                 title="Delete Worker"
                               >
                                 <Trash2 className="h-5 w-5" />
@@ -233,7 +223,7 @@ export default function WorkerManagement() {
                       ))}
                       {filteredWorkers.length === 0 && (
                         <tr>
-                          <td colSpan={6} className="px-3 py-4 text-center text-gray-500">
+                          <td colSpan={6} className="px-4 py-4 text-center text-gray-500">
                             No workers found
                           </td>
                         </tr>

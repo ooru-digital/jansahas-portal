@@ -22,6 +22,7 @@ export interface WorkHistory {
   approved_date?: string;
   rejected_date?: string;
   approved_by?: string;
+  rejected_by?: string;
 }
 
 export interface WorkHistoryResponse {

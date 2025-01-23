@@ -427,12 +427,12 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
                 <thead className="bg-gray-50">
                   <tr>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Work Name</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Organization</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Site</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start Date</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Working Days</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Approved By</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Approver</th>
                     <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
@@ -447,16 +447,16 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
                         <div className="text-sm font-medium text-gray-900">{history.work_name}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-500">{history.site}</div>
+                        <div className="text-sm text-gray-500">{history.organization_name}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-500">{history.location}</div>
-                      </td>
+                        <div className="text-sm text-gray-500">{history.site_name}</div>
+                      </td> 
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-500">
-                          {new Date(history.start_date).toLocaleDateString()} - {new Date(history.end_date).toLocaleDateString()}
+                        <div className="text-sm font-medium text-gray-900">
+                          {new Date(history.start_date).toLocaleDateString()}
                         </div>
-                      </td>
+                      </td>                     
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">{history.number_of_working_days}</div>
                       </td>
@@ -486,7 +486,7 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-500">{history.approved_by || 'NA'}</div>
+                        <div className="text-sm text-gray-500">{history.approved_by || history.rejected_by || 'NA'}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         {history.status === 'pending' ? (

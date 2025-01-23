@@ -107,7 +107,7 @@ export default function WorkHistoryDetailModal({ workHistory, onClose }: WorkHis
                   <p className="font-medium">{workHistory.work_name}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Work Type</p>
+                  <p className="text-sm text-gray-500">Employment Type</p>
                   <p className="font-medium">{workHistory.work_type}</p>
                 </div>
                 <div>
@@ -131,17 +131,17 @@ export default function WorkHistoryDetailModal({ workHistory, onClose }: WorkHis
               </h3>
               <div className="space-y-3">
                 <div>
-                  <p className="text-sm text-gray-500">Location</p>
-                  <p className="font-medium">{workHistory.location}</p>
+                  <p className="text-sm text-gray-500">Organization</p>
+                  <p className="font-medium">{workHistory.organization_name}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Site</p>
                   <p className="font-medium">{workHistory.site_name}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Organization</p>
-                  <p className="font-medium">{workHistory.organization_name}</p>
-                </div>
+                  <p className="text-sm text-gray-500">Location</p>
+                  <p className="font-medium">{workHistory.location}</p>
+                </div>               
               </div>
             </div>
 

@@ -13,9 +13,16 @@ export default function Approvals() {
   const [processingBulk, setProcessingBulk] = useState(false);
   const [selectedWorkHistory, setSelectedWorkHistory] = useState<WorkHistoryDetail | null>(null);
   const [currentUrl, setCurrentUrl] = useState<string | null>(null);
+  const [isJansathi, setIsJansathi] = useState<boolean>(false);
 
   useEffect(() => {
     fetchApprovals();
+    // Get isJansathi value from userInfo
+    const userInfoStr = localStorage.getItem('userInfo');
+    if (userInfoStr) {
+      const { is_jansathi } = JSON.parse(userInfoStr);
+      setIsJansathi(is_jansathi);
+    }
   }, []);
 
   const fetchApprovals = async (url?: string) => {
@@ -159,7 +166,7 @@ export default function Approvals() {
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold text-gray-900">Pending Approvals</h1>
-            {selectedApprovals.size > 0 && (
+            {!isJansathi && selectedApprovals.size > 0 && (
               <div className="flex items-center gap-3">
                 <span className="text-sm text-gray-600">
                   {selectedApprovals.size} selected
@@ -189,25 +196,29 @@ export default function Approvals() {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left">
-                      {selectableCount > 0 && (
-                        <input
-                          type="checkbox"
-                          checked={selectedApprovals.size === selectableCount && selectableCount > 0}
-                          onChange={toggleSelectAll}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                      )}
-                    </th>
+                    {!isJansathi && (
+                      <th className="px-6 py-3 text-left">
+                        {selectableCount > 0 && (
+                          <input
+                            type="checkbox"
+                            checked={selectedApprovals.size === selectableCount && selectableCount > 0}
+                            onChange={toggleSelectAll}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                        )}
+                      </th>
+                    )}
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Photo</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Worker</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Work Details</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Organization</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Site</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start Date</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Working Days</th>
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created At</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    {!isJansathi && (
+                      <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    )}
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -217,16 +228,18 @@ export default function Approvals() {
                       className="hover:bg-gray-50 cursor-pointer"
                       onClick={() => handleRowClick(approval.id)}
                     >
-                      <td className="px-6 py-4" onClick={e => e.stopPropagation()}>
-                        {!approval.isJansathi && (
-                          <input
-                            type="checkbox"
-                            checked={selectedApprovals.has(approval.id)}
-                            onChange={() => toggleSelect(approval.id)}
-                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                          />
-                        )}
-                      </td>
+                      {!isJansathi && (
+                        <td className="px-6 py-4" onClick={e => e.stopPropagation()}>
+                          {!approval.isJansathi && (
+                            <input
+                              type="checkbox"
+                              checked={selectedApprovals.has(approval.id)}
+                              onChange={() => toggleSelect(approval.id)}
+                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            />
+                          )}
+                        </td>
+                      )}
                       <td className="px-6 py-4">
                         {approval.photograph ? (
                           <img
@@ -249,11 +262,14 @@ export default function Approvals() {
                         <div className="text-sm text-gray-500">{approval.work_type}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-500">{approval.site}</div>
+                        <div className="text-sm text-gray-500">{approval.organization_name}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-500">{approval.site_name}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-500">
-                          {new Date(approval.start_date).toLocaleDateString()} - {new Date(approval.end_date).toLocaleDateString()}
+                          {new Date(approval.start_date).toLocaleDateString()}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -264,33 +280,30 @@ export default function Approvals() {
                           {new Date(approval.created_at).toLocaleDateString()}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                          {approval.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right space-x-3" onClick={e => e.stopPropagation()}>
-                        {!approval.isJansathi && (
-                          <>
-                            <button
-                              onClick={() => handleApprovalAction(approval.id, 'approved')}
-                              disabled={processingApproval === approval.id}
-                              className={`text-green-600 hover:text-green-900 ${processingApproval === approval.id ? 'opacity-50 cursor-not-allowed' : ''}`}
-                              title="Approve"
-                            >
-                              <CheckCircle2 className="h-5 w-5 inline" />
-                            </button>
-                            <button
-                              onClick={() => handleApprovalAction(approval.id, 'rejected')}
-                              disabled={processingApproval === approval.id}
-                              className={`text-red-600 hover:text-red-900 ${processingApproval === approval.id ? 'opacity-50 cursor-not-allowed' : ''}`}
-                              title="Reject"
-                            >
-                              <XCircle className="h-5 w-5 inline" />
-                            </button>
-                          </>
-                        )}
-                      </td>
+                      {!isJansathi && (
+                        <td className="px-6 py-4 whitespace-nowrap text-right space-x-3" onClick={e => e.stopPropagation()}>
+                          {!approval.isJansathi && (
+                            <>
+                              <button
+                                onClick={() => handleApprovalAction(approval.id, 'approved')}
+                                disabled={processingApproval === approval.id}
+                                className={`text-green-600 hover:text-green-900 ${processingApproval === approval.id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                title="Approve"
+                              >
+                                <CheckCircle2 className="h-5 w-5 inline" />
+                              </button>
+                              <button
+                                onClick={() => handleApprovalAction(approval.id, 'rejected')}
+                                disabled={processingApproval === approval.id}
+                                className={`text-red-600 hover:text-red-900 ${processingApproval === approval.id ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                title="Reject"
+                              >
+                                <XCircle className="h-5 w-5 inline" />
+                              </button>
+                            </>
+                          )}
+                        </td>
+                      )}
                     </tr>
                   ))}
                   {!approvalsData?.results.length && (

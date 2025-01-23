@@ -169,7 +169,7 @@ export default function WorkHistoryFormModal({
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Work Type <span className="text-red-500">*</span>
+                  Employment Type <span className="text-red-500">*</span>
                 </label>
                 <select
                   name="work_type"
@@ -178,7 +178,7 @@ export default function WorkHistoryFormModal({
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
                 >
-                  <option value="">Select Work Type</option>
+                  <option value="">Select Employment Type</option>
                   <option value="Full-time">Full-time</option>
                   <option value="Part-time">Part-time</option>
                   <option value="Contract">Contract</option>
