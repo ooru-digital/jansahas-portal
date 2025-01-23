@@ -1,27 +1,30 @@
 import React, { useEffect, useState } from 'react';
-import { Clock, CheckCircle2, XCircle, Check, X, User } from 'lucide-react';
+import { Clock, CheckCircle2, XCircle, Check, X, User, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import { getPendingApprovals, bulkUpdateApprovalStatus, getWorkHistoryDetail, WorkDetail, WorkHistoryDetail } from '../api/dashboard';
+import { getPendingApprovals, bulkUpdateApprovalStatus, getWorkHistoryDetail, WorkDetail, WorkHistoryDetail, ApprovalsResponse } from '../api/dashboard';
 import WorkHistoryDetailModal from './WorkHistoryDetailModal';
 
 export default function Approvals() {
-  const [pendingApprovals, setPendingApprovals] = useState<WorkDetail[]>([]);
+  const [approvalsData, setApprovalsData] = useState<ApprovalsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [processingApproval, setProcessingApproval] = useState<number | null>(null);
   const [selectedApprovals, setSelectedApprovals] = useState<Set<number>>(new Set());
   const [processingBulk, setProcessingBulk] = useState(false);
   const [selectedWorkHistory, setSelectedWorkHistory] = useState<WorkHistoryDetail | null>(null);
+  const [currentUrl, setCurrentUrl] = useState<string | null>(null);
 
   useEffect(() => {
     fetchApprovals();
   }, []);
 
-  const fetchApprovals = async () => {
+  const fetchApprovals = async (url?: string) => {
     try {
-      const data = await getPendingApprovals();
-      setPendingApprovals(data);
+      setLoading(true);
+      const data = await getPendingApprovals(url);
+      setApprovalsData(data);
       setError(null);
+      setCurrentUrl(url || null);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch approvals';
       setError(errorMessage);
@@ -36,7 +39,7 @@ export default function Approvals() {
       setProcessingApproval(id);
       const response = await bulkUpdateApprovalStatus([{ id, status }]);
       if (response.success.length > 0) {
-        setPendingApprovals(prevApprovals => prevApprovals.filter(approval => approval.id !== id));
+        fetchApprovals(currentUrl || undefined);
         toast.success(`Work history ${status} successfully`);
       } else {
         toast.error(`Failed to ${status} work history`);
@@ -60,10 +63,7 @@ export default function Approvals() {
       const response = await bulkUpdateApprovalStatus(updates);
 
       if (response.success.length > 0) {
-        const successIds = new Set(response.success.map(item => item.id));
-        setPendingApprovals(prevApprovals => 
-          prevApprovals.filter(approval => !successIds.has(approval.id))
-        );
+        fetchApprovals(currentUrl || undefined);
         setSelectedApprovals(new Set());
         toast.success(`Successfully ${status} ${response.success.length} work histories`);
       }
@@ -78,7 +78,23 @@ export default function Approvals() {
     }
   };
 
+  const handleNextPage = () => {
+    if (approvalsData?.next) {
+      const url = new URL(approvalsData.next);
+      fetchApprovals(url.pathname + url.search);
+    }
+  };
+
+  const handlePreviousPage = () => {
+    if (approvalsData?.previous) {
+      const url = new URL(approvalsData.previous);
+      fetchApprovals(url.pathname + url.search);
+    }
+  };
+
   const toggleSelectAll = () => {
+    if (!approvalsData) return;
+    
     if (selectedApprovals.size === getSelectableApprovals().length) {
       setSelectedApprovals(new Set());
     } else {
@@ -98,7 +114,7 @@ export default function Approvals() {
   };
 
   const getSelectableApprovals = () => {
-    return pendingApprovals.filter(approval => !approval.isJansathi);
+    return approvalsData?.results.filter(approval => !approval.isJansathi) || [];
   };
 
   const handleRowClick = async (workId: number) => {
@@ -125,7 +141,7 @@ export default function Approvals() {
           <h2 className="text-xl font-semibold text-red-600 mb-2">Error Loading Approvals</h2>
           <p className="text-gray-600">{error}</p>
           <button
-            onClick={fetchApprovals}
+            onClick={() => fetchApprovals()}
             className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
             Retry
@@ -195,7 +211,7 @@ export default function Approvals() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {pendingApprovals.map((approval) => (
+                  {approvalsData?.results.map((approval) => (
                     <tr 
                       key={approval.id} 
                       className="hover:bg-gray-50 cursor-pointer"
@@ -277,7 +293,7 @@ export default function Approvals() {
                       </td>
                     </tr>
                   ))}
-                  {pendingApprovals.length === 0 && (
+                  {!approvalsData?.results.length && (
                     <tr>
                       <td colSpan={10} className="px-6 py-4 text-center text-gray-500">
                         No pending approvals
@@ -287,6 +303,73 @@ export default function Approvals() {
                 </tbody>
               </table>
             </div>
+
+            {/* Pagination */}
+            {approvalsData && (approvalsData.next || approvalsData.previous) && (
+              <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-between">
+                <div className="flex-1 flex justify-between sm:hidden">
+                  <button
+                    onClick={handlePreviousPage}
+                    disabled={!approvalsData.previous}
+                    className={`relative inline-flex items-center px-4 py-2 text-sm font-medium rounded-md ${
+                      approvalsData.previous
+                        ? 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                        : 'text-gray-400 bg-gray-100 cursor-not-allowed'
+                    }`}
+                  >
+                    Previous
+                  </button>
+                  <button
+                    onClick={handleNextPage}
+                    disabled={!approvalsData.next}
+                    className={`relative inline-flex items-center px-4 py-2 text-sm font-medium rounded-md ${
+                      approvalsData.next
+                        ? 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                        : 'text-gray-400 bg-gray-100 cursor-not-allowed'
+                    }`}
+                  >
+                    Next
+                  </button>
+                </div>
+                <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm text-gray-700">
+                      Showing <span className="font-medium">1</span> to{' '}
+                      <span className="font-medium">{approvalsData.results.length}</span> of{' '}
+                      <span className="font-medium">{approvalsData.count}</span> results
+                    </p>
+                  </div>
+                  <div>
+                    <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                      <button
+                        onClick={handlePreviousPage}
+                        disabled={!approvalsData.previous}
+                        className={`relative inline-flex items-center px-4 py-2 rounded-l-md border text-sm font-medium ${
+                          approvalsData.previous
+                            ? 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50'
+                            : 'text-gray-400 bg-gray-100 cursor-not-allowed'
+                        }`}
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                        Previous
+                      </button>
+                      <button
+                        onClick={handleNextPage}
+                        disabled={!approvalsData.next}
+                        className={`relative inline-flex items-center px-4 py-2 rounded-r-md border text-sm font-medium ${
+                          approvalsData.next
+                            ? 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50'
+                            : 'text-gray-400 bg-gray-100 cursor-not-allowed'
+                        }`}
+                      >
+                        Next
+                        <ChevronRight className="h-4 w-4" />
+                      </button>
+                    </nav>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

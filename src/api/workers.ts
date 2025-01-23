@@ -45,6 +45,20 @@ interface ApiWorkerResponse {
   photograph: string | null;
 }
 
+export interface WorkersResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: Worker[];
+}
+
+interface ApiWorkersResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: ApiWorkerResponse[];
+}
+
 const convertFileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -129,10 +143,14 @@ export const updateWorker = async (id: number, data: UpdateWorkerData): Promise<
   }
 };
 
-export const getWorkers = async (): Promise<Worker[]> => {
+export const getWorkers = async (url?: string): Promise<WorkersResponse> => {
   try {
-    const response = await api.get<ApiWorkerResponse[]>('/workers/');
-    return response.data.map(mapApiWorkerToClient);
+    const endpoint = url || '/workers/?limit=10&offset=0';
+    const response = await api.get<ApiWorkersResponse>(endpoint);
+    return {
+      ...response.data,
+      results: response.data.results.map(mapApiWorkerToClient)
+    };
   } catch (error) {
     if (error instanceof Error) {
       throw new Error(`Failed to fetch workers: ${error.message}`);

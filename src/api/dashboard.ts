@@ -55,6 +55,13 @@ interface BulkUpdateResponse {
   failures: BulkUpdateItem[];
 }
 
+export interface ApprovalsResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: WorkDetail[];
+}
+
 export const getDashboardCounts = async (): Promise<DashboardCounts> => {
   const response = await api.get('/dashboard/count/');
   return response.data;
@@ -70,8 +77,9 @@ export const getWorkHistoryDetail = async (id: number): Promise<WorkHistoryDetai
   return response.data;
 };
 
-export const getPendingApprovals = async (): Promise<WorkDetail[]> => {
-  const response = await api.get('/approvals/');
+export const getPendingApprovals = async (url?: string): Promise<ApprovalsResponse> => {
+  const endpoint = url || '/approvals/?limit=5&offset=0';
+  const response = await api.get<ApprovalsResponse>(endpoint);
   return response.data;
 };
 

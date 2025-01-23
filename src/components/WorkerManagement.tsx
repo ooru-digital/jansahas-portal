@@ -1,21 +1,22 @@
-import { useState, useEffect } from 'react';
-import { Search, Plus, Upload, History, Trash2, Pencil, User } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ChevronRight, Search, Plus, Upload, History, Trash2, Pencil, User, ChevronLeft } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import * as WorkerAPI from '../api/workers';
-import type { Worker } from '../api/workers';
+import type { Worker, WorkersResponse } from '../api/workers';
 import EditWorkerModal from './EditWorkerModal';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
 
 export default function WorkerManagement() {
   const navigate = useNavigate();
-  const [workers, setWorkers] = useState<Worker[]>([]);
+  const [workersData, setWorkersData] = useState<WorkersResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingWorkerId, setDeletingWorkerId] = useState<number | null>(null);
   const [editingWorker, setEditingWorker] = useState<Worker | null>(null);
   const [isJansathi, setIsJansathi] = useState<boolean>(false);
+  const [currentUrl, setCurrentUrl] = useState<string | null>(null);
 
   useEffect(() => {
     fetchWorkers();
@@ -27,11 +28,12 @@ export default function WorkerManagement() {
     }
   }, []);
 
-  const fetchWorkers = async () => {
+  const fetchWorkers = async (url?: string) => {
     try {
       setLoading(true);
-      const data = await WorkerAPI.getWorkers();
-      setWorkers(data);
+      const data = await WorkerAPI.getWorkers(url);
+      setWorkersData(data);
+      setCurrentUrl(url || null);
     } catch (error) {
       toast.error('Failed to fetch workers');
     } finally {
@@ -49,7 +51,7 @@ export default function WorkerManagement() {
     
     try {
       await WorkerAPI.deleteWorker(deletingWorkerId);
-      setWorkers(workers.filter(worker => worker.id !== deletingWorkerId));
+      fetchWorkers(currentUrl || undefined);
       toast.success('Worker deleted successfully');
     } catch (error) {
       toast.error('Failed to delete worker');
@@ -64,7 +66,7 @@ export default function WorkerManagement() {
   };
 
   const handleWorkerUpdated = () => {
-    fetchWorkers();
+    fetchWorkers(currentUrl || undefined);
     setEditingWorker(null);
   };
 
@@ -72,7 +74,21 @@ export default function WorkerManagement() {
     navigate(`/workers/${workerId}`);
   };
 
-  const filteredWorkers = workers.filter(worker => {
+  const handleNextPage = () => {
+    if (workersData?.next) {
+      const url = new URL(workersData.next);
+      fetchWorkers(url.pathname + url.search);
+    }
+  };
+
+  const handlePreviousPage = () => {
+    if (workersData?.previous) {
+      const url = new URL(workersData.previous);
+      fetchWorkers(url.pathname + url.search);
+    }
+  };
+
+  const filteredWorkers = workersData?.results.filter(worker => {
     if (!searchTerm) return true;
     
     const searchLower = searchTerm.toLowerCase();
@@ -81,7 +97,7 @@ export default function WorkerManagement() {
       (worker.phone_number || '').includes(searchTerm) ||
       (worker.gender?.toLowerCase() || '').includes(searchLower)
     );
-  });
+  }) || [];
 
   if (loading) {
     return (
@@ -226,6 +242,73 @@ export default function WorkerManagement() {
                   </table>
                 </div>
               </div>
+
+              {/* Pagination */}
+              {workersData && (workersData.next || workersData.previous) && (
+                <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-between">
+                  <div className="flex-1 flex justify-between sm:hidden">
+                    <button
+                      onClick={handlePreviousPage}
+                      disabled={!workersData.previous}
+                      className={`relative inline-flex items-center px-4 py-2 text-sm font-medium rounded-md ${
+                        workersData.previous
+                          ? 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                          : 'text-gray-400 bg-gray-100 cursor-not-allowed'
+                      }`}
+                    >
+                      Previous
+                    </button>
+                    <button
+                      onClick={handleNextPage}
+                      disabled={!workersData.next}
+                      className={`relative inline-flex items-center px-4 py-2 text-sm font-medium rounded-md ${
+                        workersData.next
+                          ? 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                          : 'text-gray-400 bg-gray-100 cursor-not-allowed'
+                      }`}
+                    >
+                      Next
+                    </button>
+                  </div>
+                  <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-sm text-gray-700">
+                        Showing <span className="font-medium">1</span> to{' '}
+                        <span className="font-medium">{workersData.results.length}</span> of{' '}
+                        <span className="font-medium">{workersData.count}</span> results
+                      </p>
+                    </div>
+                    <div>
+                      <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                        <button
+                          onClick={handlePreviousPage}
+                          disabled={!workersData.previous}
+                          className={`relative inline-flex items-center px-4 py-2 rounded-l-md border text-sm font-medium ${
+                            workersData.previous
+                              ? 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50'
+                              : 'text-gray-400 bg-gray-100 cursor-not-allowed'
+                          }`}
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                          Previous
+                        </button>
+                        <button
+                          onClick={handleNextPage}
+                          disabled={!workersData.next}
+                          className={`relative inline-flex items-center px-4 py-2 rounded-r-md border text-sm font-medium ${
+                            workersData.next
+                              ? 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50'
+                              : 'text-gray-400 bg-gray-100 cursor-not-allowed'
+                          }`}
+                        >
+                          Next
+                          <ChevronRight className="h-4 w-4" />
+                        </button>
+                      </nav>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
