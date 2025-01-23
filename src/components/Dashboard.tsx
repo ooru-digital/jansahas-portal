@@ -285,19 +285,6 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
           )}
 
           <button
-            onClick={handleSitesClick}
-            className="bg-white rounded-xl shadow-sm p-6 hover:bg-gray-50 transition-colors duration-200"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-600">Total Sites</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">{counts?.total_sites || 0}</p>
-              </div>
-              <Building2 className="h-10 w-10 text-blue-600 flex-shrink-0" />
-            </div>
-          </button>
-
-          <button
             onClick={handleOrganizationsClick}
             className="bg-white rounded-xl shadow-sm p-6 hover:bg-gray-50 transition-colors duration-200"
           >
@@ -307,6 +294,19 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
                 <p className="text-2xl font-bold text-gray-900 mt-1">{counts?.total_organizations || 0}</p>
               </div>
               <Building2 className="h-10 w-10 text-orange-600 flex-shrink-0" />
+            </div>
+          </button>
+
+          <button
+            onClick={handleSitesClick}
+            className="bg-white rounded-xl shadow-sm p-6 hover:bg-gray-50 transition-colors duration-200"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-600">Total Sites</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">{counts?.total_sites || 0}</p>
+              </div>
+              <Building2 className="h-10 w-10 text-blue-600 flex-shrink-0" />
             </div>
           </button>
 

@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Plus, Award, User, Camera, Upload, X, Pencil, Trash2, Clock } from 'lucide-react';
+import { ArrowLeft, Plus, Award, User, Camera, Upload, X, Pencil, Trash2, Clock, Info } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import * as WorkHistoryAPI from '../api/workHistory';
 import * as OrganizationsAPI from '../api/organizations';
-import * as WorkerAPI from '../api/workers';
 import { getWorkHistoryDetail } from '../api/dashboard';
 import type { WorkHistory, WorkHistoryResponse, CreateWorkHistoryData } from '../api/workHistory';
 import type { Organization, Site } from '../api/organizations';
@@ -490,13 +489,13 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         {history.status === 'pending' ? (
-                          <>
+                          <span className="flex items-center justify-end space-x-4">
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleEdit(history);
                               }}
-                              className="text-blue-600 hover:text-blue-900 mr-4"
+                              className="text-blue-600 hover:text-blue-900"
                             >
                               <Pencil className="h-5 w-5" />
                             </button>
@@ -509,14 +508,24 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
                             >
                               <Trash2 className="h-5 w-5" />
                             </button>
-                          </>
+                          </span>
                         ) : (
-                          <span className="text-gray-500">NA</span>
+                        <span className="flex items-center justify-end">
+                          <span className="text-gray-500 mr-1">NA</span>
+                          <span className="relative group">
+                            <Info className="h-4 w-4 text-gray-400 hover:text-gray-600 transition-colors" />
+                            <div className="absolute right-0 bottom-full mb-2 hidden group-hover:block z-50">
+                              <div className="bg-gray-800 text-white text-xs rounded px-3 py-2 shadow-lg max-w-[calc(100vw-16px)] overflow-hidden">
+                                Edit and Delete actions are not allowed for approved / rejected work history.
+                              </div>
+                            </div>
+                          </span>
+                        </span>
                         )}
                       </td>
                     </tr>
                   ))}
-                  {!workHistoryData.data?.length && (
+                  {!workHistoryData.data.length && (
                     <tr>
                       <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
                         No work history found

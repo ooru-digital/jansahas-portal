@@ -1,6 +1,12 @@
-import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import DashboardComponent from '../components/Dashboard';
 
 export default function Dashboard() {
-  return <DashboardComponent onNavigate={() => {}} />;
+  const navigate = useNavigate();
+
+  const handleNavigate = (view: 'dashboard' | 'workers' | 'approvals') => {
+    navigate(`/${view}`);
+  };
+
+  return <DashboardComponent onNavigate={handleNavigate} />;
 }
