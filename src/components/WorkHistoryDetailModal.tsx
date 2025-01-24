@@ -138,7 +138,7 @@ export default function WorkHistoryDetailModal({ workHistory, onClose }: WorkHis
                   <p className="font-medium">{workHistory.site_name}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Location</p>
+                  <p className="text-sm text-gray-500">Site Location</p>
                   <p className="font-medium">{workHistory.location}</p>
                 </div>               
               </div>
