@@ -16,7 +16,8 @@ interface ListModalProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
-  items: Array<{ id: string; name: string; created_at: string }>;
+  type: 'sites' | 'organizations';
+  items: Array<Site | Organization>;
 }
 
 const WorkList = ({ title, works, icon: Icon, colorClass, onWorkClick }: { 
@@ -99,13 +100,16 @@ const WorkList = ({ title, works, icon: Icon, colorClass, onWorkClick }: {
     </div>
   </div>
 );
-
-const ListModal: React.FC<ListModalProps> = ({ isOpen, onClose, title, items }) => {
+const ListModal: React.FC<ListModalProps> = ({ isOpen, onClose, title, type, items }) => {
   if (!isOpen) return null;
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-GB');
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-2xl w-full">
+      <div className="bg-white rounded-lg max-w-4xl w-full">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
           <button
@@ -120,24 +124,58 @@ const ListModal: React.FC<ListModalProps> = ({ isOpen, onClose, title, items }) 
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created At</th>
+                  {type === 'sites' ? (
+                    <>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Site Name</th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Organization</th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Site Location</th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created At</th>
+                    </>
+                  ) : (
+                    <>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created At</th>
+                    </>
+                  )}
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {items.map((item) => (
                   <tr key={item.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {item.name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(item.created_at).toLocaleDateString('en-GB')}
-                    </td>
+                    {type === 'sites' ? (
+                      <>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {(item as Site).name}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {(item as Site).organization_name}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {(item as Site).location}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {formatDate((item as Site).created_at)}
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {(item as Organization).name}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {(item as Organization).location || 'N/A'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {formatDate((item as Organization).created_at)}
+                        </td>
+                      </>
+                    )}
                   </tr>
                 ))}
                 {items.length === 0 && (
                   <tr>
-                    <td colSpan={2} className="px-6 py-4 text-center text-gray-500">
+                    <td colSpan={type === 'sites' ? 4 : 3} className="px-6 py-4 text-center text-gray-500">
                       No items found
                     </td>
                   </tr>
@@ -247,138 +285,142 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Dashboard</h1>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex-1 text-center">
-                <p className="text-sm font-medium text-gray-600">Pending Approvals</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">{counts?.pending_approval_count || 0}</p>
-              </div>
-              <Clock className="h-10 w-10 text-yellow-600 flex-shrink-0" />
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex-1 text-center">
-                <p className="text-sm font-medium text-gray-600">Approved Works</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">{counts?.approved_work_count || 0}</p>
-              </div>
-              <CheckSquare className="h-10 w-10 text-green-600 flex-shrink-0" />
-            </div>
-          </div>
-
-          {counts?.rejected_work_count !== undefined && (
+    <>
+      <div className="min-h-screen bg-gray-50 p-6">
+        <div className="max-w-7xl mx-auto">
+          <h1 className="text-3xl font-bold text-gray-900 mb-8">Dashboard</h1>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             <div className="bg-white rounded-xl shadow-sm p-6">
               <div className="flex items-center justify-between">
                 <div className="flex-1 text-center">
-                  <p className="text-sm font-medium text-gray-600">Total Rejections</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-1">{counts.rejected_work_count}</p>
+                  <p className="text-sm font-medium text-gray-600">Pending Approvals</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-1">{counts?.pending_approval_count || 0}</p>
                 </div>
-                <XCircle className="h-10 w-10 text-red-600 flex-shrink-0" />
+                <Clock className="h-10 w-10 text-yellow-600 flex-shrink-0" />
               </div>
             </div>
-          )}
 
-          <button
-            onClick={handleOrganizationsClick}
-            className="bg-white rounded-xl shadow-sm p-6 hover:bg-gray-50 transition-colors duration-200"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-600">Total Organizations</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">{counts?.total_organizations || 0}</p>
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex-1 text-center">
+                  <p className="text-sm font-medium text-gray-600">Approved Works</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-1">{counts?.approved_work_count || 0}</p>
+                </div>
+                <CheckSquare className="h-10 w-10 text-green-600 flex-shrink-0" />
               </div>
-              <Building2 className="h-10 w-10 text-orange-600 flex-shrink-0" />
             </div>
-          </button>
 
-          <button
-            onClick={handleSitesClick}
-            className="bg-white rounded-xl shadow-sm p-6 hover:bg-gray-50 transition-colors duration-200"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-600">Total Sites</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">{counts?.total_sites || 0}</p>
+            {counts?.rejected_work_count !== undefined && (
+              <div className="bg-white rounded-xl shadow-sm p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1 text-center">
+                    <p className="text-sm font-medium text-gray-600">Total Rejections</p>
+                    <p className="text-2xl font-bold text-gray-900 mt-1">{counts.rejected_work_count}</p>
+                  </div>
+                  <XCircle className="h-10 w-10 text-red-600 flex-shrink-0" />
+                </div>
               </div>
-              <Building2 className="h-10 w-10 text-blue-600 flex-shrink-0" />
-            </div>
-          </button>
+            )}
 
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex-1 text-center">
-                <p className="text-sm font-medium text-gray-600">Authorized Signatories</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">{counts?.total_authorized_signatories || 0}</p>
+            <button
+              onClick={handleOrganizationsClick}
+              className="bg-white rounded-xl shadow-sm p-6 hover:bg-gray-50 transition-colors duration-200"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-600">Total Organizations</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-1">{counts?.total_organizations || 0}</p>
+                </div>
+                <Building2 className="h-10 w-10 text-orange-600 flex-shrink-0" />
               </div>
-              <Users className="h-10 w-10 text-purple-600 flex-shrink-0" />
+            </button>
+
+            <button
+              onClick={handleSitesClick}
+              className="bg-white rounded-xl shadow-sm p-6 hover:bg-gray-50 transition-colors duration-200"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-600">Total Sites</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-1">{counts?.total_sites || 0}</p>
+                </div>
+                <Building2 className="h-10 w-10 text-blue-600 flex-shrink-0" />
+              </div>
+            </button>
+
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex-1 text-center">
+                  <p className="text-sm font-medium text-gray-600">Authorized Signatories</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-1">{counts?.total_authorized_signatories || 0}</p>
+                </div>
+                <Users className="h-10 w-10 text-purple-600 flex-shrink-0" />
+              </div>
             </div>
+
+            <button
+              onClick={() => onNavigate('workers')}
+              className="bg-white rounded-xl shadow-sm p-6 hover:bg-gray-50 transition-colors duration-200"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-600">Total Workers</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-1">{counts?.total_workers || 0}</p>
+                </div>
+                <UserRound className="h-10 w-10 text-indigo-600 flex-shrink-0" />
+              </div>
+            </button>
           </div>
 
-          <button
-            onClick={() => onNavigate('workers')}
-            className="bg-white rounded-xl shadow-sm p-6 hover:bg-gray-50 transition-colors duration-200"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-600">Total Workers</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">{counts?.total_workers || 0}</p>
-              </div>
-              <UserRound className="h-10 w-10 text-indigo-600 flex-shrink-0" />
-            </div>
-          </button>
+          <div className="grid grid-cols-1 gap-6">
+            <WorkList
+              title="Recent Pending Approvals"
+              works={pendingWorks}
+              icon={Clock}
+              colorClass="text-yellow-600"
+              onWorkClick={handleWorkClick}
+            />
+            <WorkList
+              title="Recent Approved Works"
+              works={approvedWorks}
+              icon={CheckSquare}
+              colorClass="text-green-600"
+              onWorkClick={handleWorkClick}
+            />
+            <WorkList
+              title="Recent Rejected Works"
+              works={rejectedWorks}
+              icon={XCircle}
+              colorClass="text-red-600"
+              onWorkClick={handleWorkClick}
+            />
+          </div>
+
+          <ListModal
+            isOpen={showSitesModal}
+            onClose={() => setShowSitesModal(false)}
+            title="All Sites"
+            type="sites"
+            items={sites}
+          />
+
+          <ListModal
+            isOpen={showOrganizationsModal}
+            onClose={() => setShowOrganizationsModal(false)}
+            title="All Organizations"
+            type="organizations"
+            items={organizations}
+          />
+
+          {selectedWorkHistory && (
+            <WorkHistoryDetailModal
+              workHistory={selectedWorkHistory}
+              onClose={() => setSelectedWorkHistory(null)}
+            />
+          )}
         </div>
-
-        <div className="grid grid-cols-1 gap-6">
-          <WorkList
-            title="Recent Pending Approvals"
-            works={pendingWorks}
-            icon={Clock}
-            colorClass="text-yellow-600"
-            onWorkClick={handleWorkClick}
-          />
-          <WorkList
-            title="Recent Approved Works"
-            works={approvedWorks}
-            icon={CheckSquare}
-            colorClass="text-green-600"
-            onWorkClick={handleWorkClick}
-          />
-          <WorkList
-            title="Recent Rejected Works"
-            works={rejectedWorks}
-            icon={XCircle}
-            colorClass="text-red-600"
-            onWorkClick={handleWorkClick}
-          />
-        </div>
-
-        <ListModal
-          isOpen={showSitesModal}
-          onClose={() => setShowSitesModal(false)}
-          title="All Sites"
-          items={sites}
-        />
-
-        <ListModal
-          isOpen={showOrganizationsModal}
-          onClose={() => setShowOrganizationsModal(false)}
-          title="All Organizations"
-          items={organizations}
-        />
-
-        {selectedWorkHistory && (
-          <WorkHistoryDetailModal
-            workHistory={selectedWorkHistory}
-            onClose={() => setSelectedWorkHistory(null)}
-          />
-        )}
       </div>
-    </div>
+    </>
   );
 }

@@ -3,6 +3,7 @@ import api from './axiosInstance';
 export interface Organization {
   id: string;
   name: string;
+  location?: string;
   created_at: string;
 }
 

@@ -9,8 +9,7 @@ export default function Footer() {
             rel="noopener noreferrer"
             className="flex items-center gap-1"
           >
-            <img src="/Logo.png" alt="CredIssuer Logo" className="h-5 w-5" />
-            <span className="text-sm font-medium text-gray-900">CredIssuer</span>
+            <img src="/credissuer-logo.png" alt="CredIssuer Logo" className="h-6 w-26" />
           </a>
         </div>
       </div>

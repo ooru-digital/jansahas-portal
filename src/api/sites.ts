@@ -3,9 +3,11 @@ import api from './axiosInstance';
 export interface Site {
   id: string;
   name: string;
+  location: string;
+  organization_id: string;
+  organization_name: string;
   created_at: string;
   updated_at: string;
-  organization_id: string;
 }
 
 export const getAllSites = async (): Promise<Site[]> => {

@@ -474,10 +474,10 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
                         <div className="text-sm font-medium text-gray-900">{history.work_name}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-500">{history.organization_name}</div>
+                        <div className="text-sm font-medium text-gray-900">{history.organization_name}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-500">{history.site_name}</div>
+                        <div className="text-sm font-medium text-gray-900">{history.site_name}</div>
                       </td> 
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">
@@ -513,7 +513,7 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-500">{history.approved_by || history.rejected_by || 'NA'}</div>
+                        <div className="text-sm font-medium text-gray-900">{history.approved_by || history.rejected_by || 'NA'}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         {history.status === 'pending' ? (
