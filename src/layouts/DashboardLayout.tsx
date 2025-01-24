@@ -12,6 +12,7 @@ interface UserInfo {
   name: string;
   email: string;
   is_jansathi: boolean;
+  profile_photo?: string | null;
 }
 
 export default function DashboardLayout({ isAuthenticated, onLogout }: DashboardLayoutProps) {
@@ -49,6 +50,24 @@ export default function DashboardLayout({ isAuthenticated, onLogout }: Dashboard
     { name: 'Workers', path: '/workers', icon: Users },
     { name: 'Approvals', path: '/approvals', icon: CheckSquare },
   ];
+
+  const renderUserAvatar = () => {
+    if (userInfo?.profile_photo) {
+      return (
+        <img 
+          src={userInfo.profile_photo}
+          alt={userInfo.name}
+          className="h-8 w-8 rounded-full object-contain border border-gray-300 shadow-sm"
+        />
+      );
+    }
+    
+    return (
+      <div className="h-8 w-8 flex-shrink-0 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium">
+        {userInfo?.name ? getInitials(userInfo.name) : ''}
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -91,10 +110,8 @@ export default function DashboardLayout({ isAuthenticated, onLogout }: Dashboard
                 onClick={() => setShowLogout(!showLogout)}
                 className="w-full group flex items-center px-2 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-md"
               >
-                <div className="h-8 w-8 flex-shrink-0 mr-2 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium">
-                  {userInfo?.name ? getInitials(userInfo.name) : ''}
-                </div>
-                <div className="flex-1 text-left">
+                {renderUserAvatar()}
+                <div className="flex-1 text-left ml-2">
                   <p className="text-base font-medium">{userInfo?.name}</p>
                   <p className="text-xs text-gray-500">{userInfo?.email}</p>
                 </div>
@@ -187,10 +204,8 @@ export default function DashboardLayout({ isAuthenticated, onLogout }: Dashboard
                     onClick={() => setShowLogout(!showLogout)}
                     className="w-full group flex items-center px-2 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-md"
                   >
-                    <div className="h-8 w-8 flex-shrink-0 mr-2 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium">
-                      {userInfo?.name ? getInitials(userInfo.name) : ''}
-                    </div>
-                    <div className="flex-1 text-left">
+                    {renderUserAvatar()}
+                    <div className="flex-1 text-left ml-2">
                       <p className="text-base font-medium">{userInfo?.name}</p>
                       <p className="text-xs text-gray-500">{userInfo?.email}</p>
                     </div>
