@@ -36,6 +36,10 @@ export interface WorkHistoryResponse {
   sex: string;
   phone_number: string;
   photograph: string | null;
+  over_all_vc_status?: 'pending' | 'Issued';
+  over_all_work_credential?: {
+    svg_url: string;
+  };
 }
 
 export interface CreateWorkHistoryData {

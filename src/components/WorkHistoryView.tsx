@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Plus, Award, User, Camera, Upload, X, Pencil, Trash2, Clock, Info, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Plus, Award, User, Camera, Upload, X, Pencil, Trash2, Clock, Info, Eye, EyeOff, RefreshCw } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import * as WorkHistoryAPI from '../api/workHistory';
 import * as OrganizationsAPI from '../api/organizations';
@@ -32,6 +32,7 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
   const [showCamera, setShowCamera] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [showPhoneNumber, setShowPhoneNumber] = useState(false);
+  const [isGeneratingVC, setIsGeneratingVC] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const photoRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -252,6 +253,77 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
     setShowForm(true);
   };
 
+  const handleGenerateVC = async () => {
+    try {
+      setIsGeneratingVC(true);
+      await WorkHistoryAPI.generateVC(workerId);
+      toast.success('VC generation initiated');
+      fetchWorkHistory();
+    } catch (error) {
+      setIsGeneratingVC(false);
+      toast.error('Failed to generate VC');
+    }
+  };
+
+  const handlePreviewClick = () => {
+    if (workHistoryData?.over_all_work_credential?.svg_url) {
+      window.open(workHistoryData.over_all_work_credential.svg_url, '_blank');
+    }
+  };
+
+  const renderVCButton = () => {
+    // If VC is already issued
+    if (workHistoryData?.over_all_vc_status === 'Issued' && workHistoryData?.over_all_work_credential?.svg_url) {
+      return (
+        <button
+          onClick={handlePreviewClick}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
+        >
+          <Award className="h-5 w-5" />
+          Preview VC
+        </button>
+      );
+    }
+
+    // If VC generation is in progress
+    if (isGeneratingVC || workHistoryData?.over_all_vc_status === 'pending') {
+      return (
+        <div className="flex items-center gap-2">
+          <button
+            disabled
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg opacity-50 cursor-not-allowed flex items-center gap-2"
+          >
+            <Award className="h-5 w-5" />
+            Generate VC
+          </button>
+          <button
+            onClick={fetchWorkHistory}
+            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
+            title="Check status"
+          >
+            <RefreshCw className="h-5 w-5" />
+          </button>
+        </div>
+      );
+    }
+
+    // Default state - show generate button if eligible
+    const approvedDays = workHistoryData?.total_no_of_approved_working_days ?? 0;
+    if (approvedDays >= 90) {
+      return (
+        <button
+          onClick={handleGenerateVC}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
+        >
+          <Award className="h-5 w-5" />
+          Generate VC
+        </button>
+      );
+    }
+
+    return null;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -319,15 +391,7 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
                 <Plus className="h-5 w-5" />
                 Add Work History
               </button>
-              {workHistoryData.total_no_of_approved_working_days >= 90 && (
-                <button
-                  onClick={() => WorkHistoryAPI.generateVC(workerId)}
-                  className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 flex items-center gap-2"
-                >
-                  <Award className="h-5 w-5" />
-                  Generate VC
-                </button>
-              )}
+              {renderVCButton()}
             </div>
           </div>
 

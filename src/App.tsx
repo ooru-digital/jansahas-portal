@@ -10,6 +10,7 @@ import WorkerDetails from './pages/WorkerDetails';
 import AddWorker from './pages/AddWorker';
 import BulkUpload from './pages/BulkUpload';
 import Approvals from './pages/Approvals';
+import VerifyCredential from './components/VerifyCredential';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -39,6 +40,12 @@ export default function App() {
             element={<Login onLogin={() => setIsAuthenticated(true)} />} 
           />
         </Route>
+
+        {/* Credential verification route - public */}
+        <Route 
+          path="/credentials/verify/:cert_hash" 
+          element={<VerifyCredential />} 
+        />
 
         {/* Protected routes */}
         <Route 

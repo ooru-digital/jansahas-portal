@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { ChevronRight, Search, Plus, Upload, Trash2, Pencil, User, ChevronLeft, Eye, EyeOff } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { ChevronRight, Search, Plus, Upload, Trash2, Pencil, User, ChevronLeft, Eye, EyeOff, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
+import debounce from 'lodash/debounce';
 import * as WorkerAPI from '../api/workers';
-import type { Worker, WorkersResponse } from '../api/workers';
+import type { Worker, WorkersResponse, WorkersQueryParams } from '../api/workers';
 import EditWorkerModal from './EditWorkerModal';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
 
@@ -15,17 +16,28 @@ export default function WorkerManagement() {
   const navigate = useNavigate();
   const [workersData, setWorkersData] = useState<WorkersResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(() => {
+    return sessionStorage.getItem('workersSearchTerm') || '';
+  });
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingWorkerId, setDeletingWorkerId] = useState<number | null>(null);
   const [editingWorker, setEditingWorker] = useState<Worker | null>(null);
   const [isJansathi, setIsJansathi] = useState<boolean>(false);
-  const [currentUrl, setCurrentUrl] = useState<string | null>(null);
   const [showPhoneNumbers, setShowPhoneNumbers] = useState<Set<number>>(new Set());
+  const [filters, setFilters] = useState<{
+    gender: string;
+    approvedDays: string;
+    vcStatus: string;
+  }>(() => {
+    const savedFilters = sessionStorage.getItem('workersFilters');
+    return savedFilters ? JSON.parse(savedFilters) : {
+      gender: '',
+      approvedDays: '',
+      vcStatus: '',
+    };
+  });
 
   useEffect(() => {
-    fetchWorkers();
-    // Get isJansathi value from userInfo
     const userInfoStr = localStorage.getItem('userInfo');
     if (userInfoStr) {
       const { is_jansathi } = JSON.parse(userInfoStr);
@@ -33,12 +45,125 @@ export default function WorkerManagement() {
     }
   }, []);
 
-  const fetchWorkers = async (url?: string) => {
+  useEffect(() => {
+    fetchWorkers();
+  }, []);
+
+  useEffect(() => {
+    sessionStorage.setItem('workersFilters', JSON.stringify(filters));
+  }, [filters]);
+
+  useEffect(() => {
+    sessionStorage.setItem('workersSearchTerm', searchTerm);
+  }, [searchTerm]);
+
+  const buildQueryParams = useCallback((pageOffset: number = 0): WorkersQueryParams => {
+    const params: WorkersQueryParams = {
+      limit: 10,
+      offset: pageOffset
+    };
+
+    if (searchTerm.trim()) {
+      params.search = searchTerm.trim();
+    }
+
+    if (filters.gender) {
+      params.gender = filters.gender as 'male' | 'female';
+    }
+
+    if (filters.approvedDays) {
+      params.approved_worker_days = filters.approvedDays as 'lt_90' | 'gt_90';
+    }
+
+    if (filters.vcStatus) {
+      params.vc_generated = filters.vcStatus === 'generated';
+    }
+
+    return params;
+  }, [searchTerm, filters]);
+
+  const fetchWorkers = useCallback(async (pageOffset?: number) => {
     try {
       setLoading(true);
-      const data = await WorkerAPI.getWorkers(url);
+      const params = buildQueryParams(pageOffset);
+      const data = await WorkerAPI.getWorkers(params);
       setWorkersData(data);
-      setCurrentUrl(url || null);
+    } catch (error) {
+      toast.error('Failed to fetch workers');
+    } finally {
+      setLoading(false);
+    }
+  }, [buildQueryParams]);
+
+  const debouncedFetch = useCallback(
+    debounce(() => {
+      fetchWorkers();
+    }, 300),
+    [fetchWorkers]
+  );
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    debouncedFetch();
+  };
+
+  const handleFilterChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    
+    const newFilters = {
+      ...filters,
+      [name]: value
+    };
+    setFilters(newFilters);
+
+    try {
+      setLoading(true);
+      const params: WorkersQueryParams = {
+        limit: 10,
+        offset: 0
+      };
+
+      if (searchTerm.trim()) {
+        params.search = searchTerm.trim();
+      }
+
+      if (newFilters.gender) {
+        params.gender = newFilters.gender as 'male' | 'female';
+      }
+
+      if (newFilters.approvedDays) {
+        params.approved_worker_days = newFilters.approvedDays as 'lt_90' | 'gt_90';
+      }
+
+      if (newFilters.vcStatus) {
+        params.vc_generated = newFilters.vcStatus === 'generated';
+      }
+
+      const data = await WorkerAPI.getWorkers(params);
+      setWorkersData(data);
+    } catch (error) {
+      toast.error('Failed to fetch workers');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const clearFilters = async () => {
+    sessionStorage.removeItem('workersSearchTerm');
+    sessionStorage.removeItem('workersFilters');
+
+    setSearchTerm('');
+    setFilters({
+      gender: '',
+      approvedDays: '',
+      vcStatus: '',
+    });
+
+    try {
+      setLoading(true);
+      const data = await WorkerAPI.getWorkers({ limit: 10, offset: 0 });
+      setWorkersData(data);
     } catch (error) {
       toast.error('Failed to fetch workers');
     } finally {
@@ -56,7 +181,7 @@ export default function WorkerManagement() {
     
     try {
       await WorkerAPI.deleteWorker(deletingWorkerId);
-      fetchWorkers(currentUrl || undefined);
+      fetchWorkers();
       toast.success('Worker deleted successfully');
     } catch (error) {
       toast.error('Failed to delete worker');
@@ -71,26 +196,12 @@ export default function WorkerManagement() {
   };
 
   const handleWorkerUpdated = () => {
-    fetchWorkers(currentUrl || undefined);
+    fetchWorkers();
     setEditingWorker(null);
   };
 
   const handleRowClick = (workerId: number) => {
     navigate(`/workers/${workerId}`);
-  };
-
-  const handleNextPage = () => {
-    if (workersData?.next) {
-      const url = new URL(workersData.next);
-      fetchWorkers(url.pathname + url.search);
-    }
-  };
-
-  const handlePreviousPage = () => {
-    if (workersData?.previous) {
-      const url = new URL(workersData.previous);
-      fetchWorkers(url.pathname + url.search);
-    }
   };
 
   const togglePhoneVisibility = (workerId: number, e: React.MouseEvent) => {
@@ -104,16 +215,41 @@ export default function WorkerManagement() {
     setShowPhoneNumbers(newShowPhoneNumbers);
   };
 
-  const filteredWorkers = workersData?.results.filter(worker => {
-    if (!searchTerm) return true;
-    
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      worker.name.toLowerCase().includes(searchLower) ||
-      (worker.phone_number || '').includes(searchTerm) ||
-      (worker.gender?.toLowerCase() || '').includes(searchLower)
-    );
-  }) || [];
+  const handlePaginationClick = async (url: string) => {
+    try {
+      setLoading(true);
+      const urlObj = new URL(url);
+      const searchParams = new URLSearchParams(urlObj.search);
+      
+      const params: WorkersQueryParams = {
+        limit: parseInt(searchParams.get('limit') || '10'),
+        offset: parseInt(searchParams.get('offset') || '0')
+      };
+
+      if (searchTerm.trim()) {
+        params.search = searchTerm.trim();
+      }
+
+      if (filters.gender) {
+        params.gender = filters.gender as 'male' | 'female';
+      }
+
+      if (filters.approvedDays) {
+        params.approved_worker_days = filters.approvedDays as 'lt_90' | 'gt_90';
+      }
+
+      if (filters.vcStatus) {
+        params.vc_generated = filters.vcStatus === 'generated';
+      }
+
+      const data = await WorkerAPI.getWorkers(params);
+      setWorkersData(data);
+    } catch (error) {
+      toast.error('Failed to fetch workers');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -152,16 +288,63 @@ export default function WorkerManagement() {
 
             <div className="bg-white rounded-lg shadow">
               <div className="p-4 md:p-6 border-b border-gray-200">
-                <div className="w-full max-w-md">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <input
-                      type="text"
-                      placeholder="Search workers..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
+                <div className="flex flex-col md:flex-row gap-4">
+                  <div className="w-full md:w-64">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                      <input
+                        type="text"
+                        placeholder="Search workers..."
+                        value={searchTerm}
+                        onChange={handleSearchChange}
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-4">
+                    <select
+                      name="gender"
+                      value={filters.gender}
+                      onChange={handleFilterChange}
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="">Gender</option>
+                      <option value="male">Male</option>
+                      <option value="female">Female</option>
+                    </select>
+
+                    <select
+                      name="approvedDays"
+                      value={filters.approvedDays}
+                      onChange={handleFilterChange}
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="">Approved Work Days</option>
+                      <option value="gt_90">Greater than 90 days</option>
+                      <option value="lt_90">Less than 90 days</option>
+                    </select>
+
+                    <select
+                      name="vcStatus"
+                      value={filters.vcStatus}
+                      onChange={handleFilterChange}
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="">VC Status</option>
+                      <option value="generated">VC Generated</option>
+                      <option value="not_generated">VC Not Generated</option>
+                    </select>
+
+                    {(searchTerm || filters.gender || filters.approvedDays || filters.vcStatus) && (
+                      <button
+                        onClick={clearFilters}
+                        className="px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg flex items-center gap-1 transition-colors"
+                      >
+                        <X className="h-4 w-4" />
+                        Clear Filters
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -176,11 +359,12 @@ export default function WorkerManagement() {
                         <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Age</th>
                         <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gender</th>
                         <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone Number</th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Approved Days</th>
                         <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {filteredWorkers.map((worker) => (
+                      {workersData?.results.map((worker) => (
                         <tr 
                           key={worker.id} 
                           className="hover:bg-gray-50 cursor-pointer"
@@ -232,6 +416,11 @@ export default function WorkerManagement() {
                             </div>
                           </td>
                           <td className="px-4 py-3">
+                            <div className="text-sm text-gray-500">
+                              {worker.total_approved_work_days || 0}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
                             <div className="flex items-center justify-center space-x-3">
                               <button
                                 onClick={(e) => {
@@ -257,9 +446,9 @@ export default function WorkerManagement() {
                           </td>
                         </tr>
                       ))}
-                      {filteredWorkers.length === 0 && (
+                      {!workersData?.results.length && (
                         <tr>
-                          <td colSpan={6} className="px-4 py-4 text-center text-gray-500">
+                          <td colSpan={7} className="px-4 py-4 text-center text-gray-500">
                             No workers found
                           </td>
                         </tr>
@@ -269,12 +458,11 @@ export default function WorkerManagement() {
                 </div>
               </div>
 
-              {/* Pagination */}
               {workersData && (workersData.next || workersData.previous) && (
                 <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-between">
                   <div className="flex-1 flex justify-between sm:hidden">
                     <button
-                      onClick={handlePreviousPage}
+                      onClick={() => workersData.previous && handlePaginationClick(workersData.previous)}
                       disabled={!workersData.previous}
                       className={`relative inline-flex items-center px-4 py-2 text-sm font-medium rounded-md ${
                         workersData.previous
@@ -285,7 +473,7 @@ export default function WorkerManagement() {
                       Previous
                     </button>
                     <button
-                      onClick={handleNextPage}
+                      onClick={() => workersData.next && handlePaginationClick(workersData.next)}
                       disabled={!workersData.next}
                       className={`relative inline-flex items-center px-4 py-2 text-sm font-medium rounded-md ${
                         workersData.next
@@ -307,7 +495,7 @@ export default function WorkerManagement() {
                     <div>
                       <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
                         <button
-                          onClick={handlePreviousPage}
+                          onClick={() => workersData.previous && handlePaginationClick(workersData.previous)}
                           disabled={!workersData.previous}
                           className={`relative inline-flex items-center px-4 py-2 rounded-l-md border text-sm font-medium ${
                             workersData.previous
@@ -319,7 +507,7 @@ export default function WorkerManagement() {
                           Previous
                         </button>
                         <button
-                          onClick={handleNextPage}
+                          onClick={() => workersData.next && handlePaginationClick(workersData.next)}
                           disabled={!workersData.next}
                           className={`relative inline-flex items-center px-4 py-2 rounded-r-md border text-sm font-medium ${
                             workersData.next

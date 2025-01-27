@@ -10,6 +10,7 @@ export interface Worker {
   age: number;
   gender: string;
   photograph: string | null;
+  total_approved_work_days?: number;
 }
 
 export interface CreateWorkerData {
@@ -57,6 +58,15 @@ interface ApiWorkersResponse {
   next: string | null;
   previous: string | null;
   results: ApiWorkerResponse[];
+}
+
+export interface WorkersQueryParams {
+  limit?: number;
+  offset?: number;
+  search?: string;
+  gender?: 'male' | 'female';
+  approved_worker_days?: 'lt_90' | 'gt_90';
+  vc_generated?: boolean;
 }
 
 const convertFileToBase64 = (file: File): Promise<string> => {
@@ -143,10 +153,22 @@ export const updateWorker = async (id: number, data: UpdateWorkerData): Promise<
   }
 };
 
-export const getWorkers = async (url?: string): Promise<WorkersResponse> => {
+export const getWorkers = async (params?: WorkersQueryParams): Promise<WorkersResponse> => {
   try {
-    const endpoint = url || '/workers/?limit=10&offset=0';
+    const queryParams = new URLSearchParams();
+    
+    if (params) {
+      if (params.limit) queryParams.append('limit', params.limit.toString());
+      if (params.offset) queryParams.append('offset', params.offset.toString());
+      if (params.search) queryParams.append('search', params.search);
+      if (params.gender) queryParams.append('gender', params.gender);
+      if (params.approved_worker_days) queryParams.append('approved_worker_days', params.approved_worker_days);
+      if (params.vc_generated !== undefined) queryParams.append('vc_generated', params.vc_generated.toString());
+    }
+
+    const endpoint = `/workers/?${queryParams.toString()}`;
     const response = await api.get<ApiWorkersResponse>(endpoint);
+    
     return {
       ...response.data,
       results: response.data.results.map(mapApiWorkerToClient)
