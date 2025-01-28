@@ -4,6 +4,7 @@ import { toast } from 'react-hot-toast';
 import { XCircle, Clock, AlertCircle, User, MapPin, CheckCircle, ChevronLeft, ChevronRight, X, Building2 } from 'lucide-react';
 import * as CredentialsAPI from '../api/credentials';
 import type { VerifyCredentialResponse, VCData } from '../api/credentials';
+import Footer from './Footer';
 
 const formatAddress = (addressFields: {
   line1?: string;
@@ -467,6 +468,7 @@ export default function VerifyCredential() {
           </div>
         </div>
       )}
+      <Footer />
     </div>
   );
 }

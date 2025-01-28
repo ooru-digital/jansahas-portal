@@ -13,6 +13,8 @@ interface UserInfo {
   email: string;
   is_jansathi: boolean;
   profile_photo?: string | null;
+  organization_name: string;
+  organization_logo: string;
 }
 
 export default function DashboardLayout({ isAuthenticated, onLogout }: DashboardLayoutProps) {
@@ -75,11 +77,22 @@ export default function DashboardLayout({ isAuthenticated, onLogout }: Dashboard
       <div className="hidden md:flex md:flex-col md:w-64 md:fixed md:inset-y-0 bg-white border-r border-gray-200">
         <div className="flex flex-col flex-grow pt-5 overflow-y-auto">
           <div className="flex items-center flex-shrink-0 px-4">
-            <img 
-              src="/worker-registry-logo.png" 
-              alt="Worker Registry Logo" 
-              className="w-auto h-auto max-h-[48px] max-w-[100px] sm:max-h-[60px] sm:max-w-[150px] lg:max-h-[80px] lg:max-w-[200px]" 
-            />
+            {userInfo?.organization_logo ? (
+              <div className="flex items-center gap-3">
+                <img 
+                  src={userInfo.organization_logo} 
+                  alt={userInfo.organization_name}
+                  className="h-12 w-12 rounded-full object-contain border-2 border-gray-200 p-1"
+                />
+                <span className="text-xl font-semibold text-gray-900 truncate">
+                  {userInfo.organization_name}
+                </span>
+              </div>
+            ) : (
+              <span className="text-xl font-semibold text-gray-900">
+                {userInfo?.organization_name}
+              </span>
+            )}
           </div>
           <div className="mt-8 flex-grow flex flex-col">
             <nav className="flex-1 px-2 space-y-1">
@@ -148,11 +161,22 @@ export default function DashboardLayout({ isAuthenticated, onLogout }: Dashboard
                 <Menu className="h-6 w-6" />
               )}
             </button>
-            <img 
-              src="/worker-registry-logo.png" 
-              alt="Worker Registry Logo" 
-              className="w-auto h-auto max-h-[40px] max-w-[150px] sm:max-h-[50px] sm:max-w-[200px]" 
-            />
+            {userInfo?.organization_logo ? (
+              <div className="flex items-center gap-3 ml-2">
+                <img 
+                  src={userInfo.organization_logo} 
+                  alt={userInfo.organization_name}
+                  className="h-10 w-10 rounded-full object-contain border-2 border-gray-200 p-1"
+                />
+                <span className="text-lg font-semibold text-gray-900 truncate">
+                  {userInfo.organization_name}
+                </span>
+              </div>
+            ) : (
+              <span className="text-lg font-semibold text-gray-900 ml-2">
+                {userInfo?.organization_name}
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -164,11 +188,22 @@ export default function DashboardLayout({ isAuthenticated, onLogout }: Dashboard
           <div className="fixed inset-y-0 left-0 w-64 bg-white shadow-lg">
             <div className="flex flex-col h-full">
               <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
-                <img 
-                  src="/worker-registry-logo.png" 
-                  alt="Worker Registry Logo" 
-                  className="w-auto h-auto max-h-[40px] max-w-[150px] sm:max-h-[50px] sm:max-w-[200px]" 
-                />
+                {userInfo?.organization_logo ? (
+                  <div className="flex items-center gap-3">
+                    <img 
+                      src={userInfo.organization_logo} 
+                      alt={userInfo.organization_name}
+                      className="h-10 w-10 rounded-full object-contain border-2 border-gray-200 p-1"
+                    />
+                    <span className="text-lg font-semibold text-gray-900 truncate">
+                      {userInfo.organization_name}
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-lg font-semibold text-gray-900">
+                    {userInfo?.organization_name}
+                  </span>
+                )}
                 <button
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="text-gray-500 hover:text-gray-600 p-2"

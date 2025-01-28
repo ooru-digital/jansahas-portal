@@ -11,6 +11,9 @@ export interface AuthTokens {
   is_jansathi: boolean;
   name: string;
   email: string;
+  profile_photo?: string | null;
+  organization_name: string;
+  organization_logo: string;
 }
 
 export const login = async (credentials: LoginCredentials): Promise<AuthTokens> => {
