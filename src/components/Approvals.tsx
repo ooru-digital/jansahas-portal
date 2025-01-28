@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle2, XCircle, Check, X, User, ChevronLeft, ChevronRight } from 'lucide-react';
+import { CheckCircle2, XCircle, Check, X, User, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { getPendingApprovals, bulkUpdateApprovalStatus, getWorkHistoryDetail, WorkHistoryDetail, ApprovalsResponse } from '../api/dashboard';
 import WorkHistoryDetailModal from './WorkHistoryDetailModal';
+import debounce from 'lodash/debounce';
 
 export default function Approvals() {
   const [approvalsData, setApprovalsData] = useState<ApprovalsResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [tableLoading, setTableLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [processingApproval, setProcessingApproval] = useState<number | null>(null);
   const [selectedApprovals, setSelectedApprovals] = useState<Set<number>>(new Set());
@@ -14,6 +16,7 @@ export default function Approvals() {
   const [selectedWorkHistory, setSelectedWorkHistory] = useState<WorkHistoryDetail | null>(null);
   const [currentUrl, setCurrentUrl] = useState<string | null>(null);
   const [isJansathi, setIsJansathi] = useState<boolean>(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     fetchApprovals();
@@ -25,20 +28,45 @@ export default function Approvals() {
     }
   }, []);
 
-  const fetchApprovals = async (url?: string) => {
+  const fetchApprovals = async (url?: string, search?: string, isSearching: boolean = false) => {
     try {
-      setLoading(true);
-      const data = await getPendingApprovals(url);
+      // Use tableLoading for search and pagination, main loading for initial load
+      if (isSearching) {
+        setTableLoading(true);
+      } else {
+        setLoading(true);
+      }
+
+      let endpoint = url || '/approvals/?limit=10&offset=0';
+      
+      // Add search parameter if provided
+      if (search) {
+        endpoint += `${endpoint.includes('?') ? '&' : '?'}search=${encodeURIComponent(search)}`;
+      }
+      
+      const data = await getPendingApprovals(endpoint);
       setApprovalsData(data);
       setError(null);
-      setCurrentUrl(url || null);
+      setCurrentUrl(endpoint);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch approvals';
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
       setLoading(false);
+      setTableLoading(false);
     }
+  };
+
+  // Debounce search to avoid too many API calls
+  const debouncedSearch = debounce((term: string) => {
+    fetchApprovals(undefined, term, true);
+  }, 300);
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    debouncedSearch(value);
   };
 
   const handleApprovalAction = async (id: number, status: 'approved' | 'rejected') => {
@@ -88,14 +116,22 @@ export default function Approvals() {
   const handleNextPage = () => {
     if (approvalsData?.next) {
       const url = new URL(approvalsData.next);
-      fetchApprovals(url.pathname + url.search);
+      let endpoint = url.pathname + url.search;
+      if (searchTerm) {
+        endpoint += `${endpoint.includes('?') ? '&' : '?'}search=${encodeURIComponent(searchTerm)}`;
+      }
+      fetchApprovals(endpoint, undefined, true);
     }
   };
 
   const handlePreviousPage = () => {
     if (approvalsData?.previous) {
       const url = new URL(approvalsData.previous);
-      fetchApprovals(url.pathname + url.search);
+      let endpoint = url.pathname + url.search;
+      if (searchTerm) {
+        endpoint += `${endpoint.includes('?') ? '&' : '?'}search=${encodeURIComponent(searchTerm)}`;
+      }
+      fetchApprovals(endpoint, undefined, true);
     }
   };
 
@@ -192,7 +228,26 @@ export default function Approvals() {
           </div>
 
           <div className="bg-white rounded-xl shadow-sm">
-            <div className="overflow-x-auto">
+            <div className="p-4 md:p-6 border-b border-gray-200">
+              <div className="relative w-full md:w-64">
+                <input
+                  type="text"
+                  placeholder="Search approvals..."
+                  value={searchTerm}
+                  onChange={handleSearchChange}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              </div>
+            </div>
+
+            <div className="overflow-x-auto relative">
+              {tableLoading && (
+                <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              )}
+              
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>

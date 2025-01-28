@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { ChevronRight, Search, Plus, Upload, Trash2, Pencil, User, ChevronLeft, Eye, EyeOff, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
@@ -16,9 +16,12 @@ export default function WorkerManagement() {
   const navigate = useNavigate();
   const [workersData, setWorkersData] = useState<WorkersResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [tableLoading, setTableLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState(() => {
     return sessionStorage.getItem('workersSearchTerm') || '';
   });
+  
+  const searchTermRef = useRef(searchTerm);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingWorkerId, setDeletingWorkerId] = useState<number | null>(null);
   const [editingWorker, setEditingWorker] = useState<Worker | null>(null);
@@ -36,6 +39,10 @@ export default function WorkerManagement() {
       vcStatus: '',
     };
   });
+
+  useEffect(() => {
+    searchTermRef.current = searchTerm;
+  }, [searchTerm]);
 
   useEffect(() => {
     const userInfoStr = localStorage.getItem('userInfo');
@@ -63,8 +70,8 @@ export default function WorkerManagement() {
       offset: pageOffset
     };
 
-    if (searchTerm.trim()) {
-      params.search = searchTerm.trim();
+    if (searchTermRef.current.trim()) {
+      params.search = searchTermRef.current.trim();
     }
 
     if (filters.gender) {
@@ -80,11 +87,16 @@ export default function WorkerManagement() {
     }
 
     return params;
-  }, [searchTerm, filters]);
+  }, [filters]);
 
-  const fetchWorkers = useCallback(async (pageOffset?: number) => {
+  const fetchWorkers = useCallback(async (pageOffset?: number, isSearching: boolean = false) => {
     try {
-      setLoading(true);
+      if (isSearching) {
+        setTableLoading(true);
+      } else {
+        setLoading(true);
+      }
+
       const params = buildQueryParams(pageOffset);
       const data = await WorkerAPI.getWorkers(params);
       setWorkersData(data);
@@ -92,12 +104,13 @@ export default function WorkerManagement() {
       toast.error('Failed to fetch workers');
     } finally {
       setLoading(false);
+      setTableLoading(false);
     }
   }, [buildQueryParams]);
 
   const debouncedFetch = useCallback(
     debounce(() => {
-      fetchWorkers();
+      fetchWorkers(0, true);
     }, 300),
     [fetchWorkers]
   );
@@ -105,6 +118,7 @@ export default function WorkerManagement() {
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchTerm(value);
+    sessionStorage.setItem('workersSearchTerm', value);
     debouncedFetch();
   };
 
@@ -118,7 +132,7 @@ export default function WorkerManagement() {
     setFilters(newFilters);
 
     try {
-      setLoading(true);
+      setTableLoading(true);
       const params: WorkersQueryParams = {
         limit: 10,
         offset: 0
@@ -145,7 +159,7 @@ export default function WorkerManagement() {
     } catch (error) {
       toast.error('Failed to fetch workers');
     } finally {
-      setLoading(false);
+      setTableLoading(false);
     }
   };
 
@@ -161,13 +175,13 @@ export default function WorkerManagement() {
     });
 
     try {
-      setLoading(true);
+      setTableLoading(true);
       const data = await WorkerAPI.getWorkers({ limit: 10, offset: 0 });
       setWorkersData(data);
     } catch (error) {
       toast.error('Failed to fetch workers');
     } finally {
-      setLoading(false);
+      setTableLoading(false);
     }
   };
 
@@ -215,41 +229,15 @@ export default function WorkerManagement() {
     setShowPhoneNumbers(newShowPhoneNumbers);
   };
 
-  const handlePaginationClick = async (url: string) => {
+  async function handlePaginationClick(url: string) {
     try {
-      setLoading(true);
       const urlObj = new URL(url);
-      const searchParams = new URLSearchParams(urlObj.search);
-      
-      const params: WorkersQueryParams = {
-        limit: parseInt(searchParams.get('limit') || '10'),
-        offset: parseInt(searchParams.get('offset') || '0')
-      };
-
-      if (searchTerm.trim()) {
-        params.search = searchTerm.trim();
-      }
-
-      if (filters.gender) {
-        params.gender = filters.gender as 'male' | 'female';
-      }
-
-      if (filters.approvedDays) {
-        params.approved_worker_days = filters.approvedDays as 'lt_90' | 'gt_90';
-      }
-
-      if (filters.vcStatus) {
-        params.vc_generated = filters.vcStatus === 'generated';
-      }
-
-      const data = await WorkerAPI.getWorkers(params);
-      setWorkersData(data);
+      const offset = parseInt(urlObj.searchParams.get('offset') || '0');
+      fetchWorkers(offset, true);
     } catch (error) {
       toast.error('Failed to fetch workers');
-    } finally {
-      setLoading(false);
     }
-  };
+  }
 
   if (loading) {
     return (
@@ -349,7 +337,12 @@ export default function WorkerManagement() {
                 </div>
               </div>
 
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto relative">
+                {tableLoading && (
+                  <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center z-10">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  </div>
+                )}
                 <div className="inline-block min-w-full align-middle">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { XCircle, Clock, AlertCircle, ExternalLink, User, MapPin, Info, CheckCircle, ChevronLeft, ChevronRight, X, Building2 } from 'lucide-react';
+import { XCircle, Clock, AlertCircle, ExternalLink, User, MapPin, CheckCircle, ChevronLeft, ChevronRight, X, Building2 } from 'lucide-react';
 import * as CredentialsAPI from '../api/credentials';
 import type { VerifyCredentialResponse, VCData } from '../api/credentials';
 
@@ -92,12 +92,12 @@ export default function VerifyCredential() {
   };
 
   const handlePrevious = () => {
-    setCurrentIndex((prev) => Math.max(0, prev - 3));
+    setCurrentIndex((prev) => Math.max(0, prev - 1));
   };
 
   const handleNext = () => {
     if (!data?.related_vc_data) return;
-    setCurrentIndex((prev) => Math.min(data.related_vc_data.length - 3, prev + 3));
+    setCurrentIndex((prev) => Math.min(data.related_vc_data.length - 1, prev + 1));
   };
 
   if (loading) {
@@ -192,8 +192,8 @@ export default function VerifyCredential() {
             </div>
           </div>
 
-          {/* Address Information Card */}
-          <div className="bg-white p-6 rounded-lg shadow-sm">
+          {/* Address Information Card - Hidden on mobile */}
+          <div className="hidden md:block bg-white p-6 rounded-lg shadow-sm">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
               <MapPin className="h-5 w-5 text-gray-500" />
               Address Information
@@ -210,26 +210,21 @@ export default function VerifyCredential() {
             </div>
           </div>
 
-          {/* Additional Info Card */}
+          {/* Working Days Card */}
           <div className="bg-white p-6 rounded-lg shadow-sm">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <Info className="h-5 w-5 text-gray-500" />
-              Additional Information
-            </h3>
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm text-gray-500">Total Approved Working Days</p>
-                <p className="text-4xl mt-4 font-bold text-green-600">
-                  {data.worker_details.total_approved_work_days || 0}
-                </p>
-              </div>
-              {data.vc_data.approved_by && (
-                <div>
-                  <p className="text-sm text-gray-500">Approved By</p>
-                  <p className="text-sm font-medium text-gray-900">{data.vc_data.approved_by}</p>
-                </div>
-              )}
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">Total Approved Working Days</h3>
+            <div className="flex items-baseline gap-2">
+              <span className="text-4xl mt-2 font-bold text-green-600">
+                {data.worker_details.total_approved_work_days || 0}
+              </span>
+              <span className="text-sm text-gray-500">days</span>
             </div>
+            {data.vc_data.approved_by && (
+              <div className="mt-4">
+                <p className="text-sm text-gray-500">Approved By</p>
+                <p className="text-sm font-medium text-gray-900">{data.vc_data.approved_by}</p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -237,7 +232,9 @@ export default function VerifyCredential() {
         {data.related_vc_data.length > 0 && (
           <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
             <h2 className="text-xl font-semibold mb-6">Form No - V(A) Employment Certificates</h2>
-            <div className="relative">
+            
+            {/* Desktop View */}
+            <div className="hidden md:block">
               <div className="flex items-center justify-between mb-4">
                 <button
                   onClick={handlePrevious}
@@ -255,20 +252,37 @@ export default function VerifyCredential() {
                     <button
                       key={vc.credential_id}
                       onClick={() => setShowPreview(vc.svg_url)}
-                      className="w-48 h-48 bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow p-4 flex flex-col items-center justify-center gap-4"
+                      className="relative w-[300px] h-[400px] bg-gray-100 border border-gray-400 rounded-lg shadow-sm hover:bg-gray-50 hover:shadow-md transition-all group overflow-hidden"
                     >
-                      {vc.org_logo ? (
-                        <img
-                          src={vc.org_logo}
-                          alt={vc.org_name}
-                          className="w-24 h-24 object-contain"
-                        />
-                      ) : (
-                        <Building2 className="w-24 h-24 text-gray-400" />
-                      )}
-                      <p className="text-sm font-medium text-gray-900 text-center line-clamp-2">
-                        {vc.org_name}
-                      </p>
+                      {/* Certificate Preview */}
+                      <iframe
+                        src={vc.svg_url}
+                        className="w-full h-full pointer-events-none"
+                        title={`${vc.org_name} Certificate Preview`}
+                      />
+                      
+                      {/* Hover Overlay */}
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {vc.org_logo ? (
+                          <div className="w-24 h-24 rounded-full border-4 border-white shadow-lg p-3 bg-white mb-4">
+                            <img
+                              src={vc.org_logo}
+                              alt={vc.org_name}
+                              className="w-full h-full object-contain"
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-24 h-24 rounded-full border-4 border-white shadow-lg p-3 bg-white mb-4 flex items-center justify-center">
+                            <Building2 className="w-12 h-12 text-gray-400" />
+                          </div>
+                        )}
+                        <p className="text-lg font-medium text-white text-center">
+                          {vc.org_name}
+                        </p>
+                        <p className="text-sm text-gray-200 mt-2">
+                          Click to view certificate
+                        </p>
+                      </div>
                     </button>
                   ))}
                 </div>
@@ -277,6 +291,72 @@ export default function VerifyCredential() {
                   disabled={currentIndex >= data.related_vc_data.length - 3}
                   className={`p-2 rounded-full ${
                     currentIndex >= data.related_vc_data.length - 3
+                      ? 'text-gray-300 cursor-not-allowed'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  <ChevronRight className="h-6 w-6" />
+                </button>
+              </div>
+            </div>
+
+            {/* Mobile View */}
+            <div className="md:hidden">
+              <div className="flex items-center justify-between mb-4">
+                <button
+                  onClick={handlePrevious}
+                  disabled={currentIndex === 0}
+                  className={`p-2 rounded-full ${
+                    currentIndex === 0
+                      ? 'text-gray-300 cursor-not-allowed'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  <ChevronLeft className="h-6 w-6" />
+                </button>
+                <div className="flex-1 flex justify-center">
+                  {data.related_vc_data[currentIndex] && (
+                    <button
+                      onClick={() => setShowPreview(data.related_vc_data[currentIndex].svg_url)}
+                      className="relative w-full max-w-[300px] h-[400px] bg-gray-100 border border-gray-400 rounded-lg shadow-sm hover:shadow-md transition-all overflow-hidden"
+                    >
+                      {/* Certificate Preview Background */}
+                      <iframe
+                        src={data.related_vc_data[currentIndex].svg_url}
+                        className="w-full h-full pointer-events-none opacity-95"
+                        title={`${data.related_vc_data[currentIndex].org_name} Certificate Preview`}
+                      />
+
+                      {/* Always Visible Overlay */}
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-white bg-opacity-80 p-6">
+                        {data.related_vc_data[currentIndex].org_logo ? (
+                          <div className="w-24 h-24 rounded-full border-4 border-white shadow-lg p-3 bg-white mb-4">
+                            <img
+                              src={data.related_vc_data[currentIndex].org_logo}
+                              alt={data.related_vc_data[currentIndex].org_name}
+                              className="w-full h-full object-contain"
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-24 h-24 rounded-full border-4 border-white shadow-lg p-3 bg-white mb-4 flex items-center justify-center">
+                            <Building2 className="w-12 h-12 text-gray-400" />
+                          </div>
+                        )}
+                        <p className="text-lg font-medium text-gray-900 text-center">
+                          {data.related_vc_data[currentIndex].org_name}
+                        </p>
+                        <p className="text-sm text-gray-500 mt-2 text-center">
+                          Tap to view certificate
+                        </p>
+                      </div>
+                    </button>
+                  )}
+                </div>
+                <button
+                  onClick={handleNext}
+                  disabled={currentIndex >= data.related_vc_data.length - 1}
+                  className={`p-2 rounded-full ${
+                    currentIndex >= data.related_vc_data.length - 1
                       ? 'text-gray-300 cursor-not-allowed'
                       : 'text-gray-600 hover:bg-gray-100'
                   }`}
@@ -300,7 +380,7 @@ export default function VerifyCredential() {
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
-                Preview Certificate
+                Preview
               </a>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -317,13 +397,13 @@ export default function VerifyCredential() {
                 <p className="mt-1 font-medium">{data.vc_data.recipient_name}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Organization</p>
-                <p className="mt-1 font-medium">{data.vc_data.org_name}</p>
-              </div>
-              <div>
                 <p className="text-sm text-gray-500">Issuer</p>
                 <p className="mt-1 font-medium">{data.vc_data.issuer_name}</p>
               </div>
+              <div>
+                <p className="text-sm text-gray-500">Organization</p>
+                <p className="mt-1 font-medium">{data.vc_data.org_name}</p>
+              </div>                            
               <div>
                 <p className="text-sm text-gray-500">Updated At</p>
                 <p className="mt-1 font-medium">{data.vc_data.updated_at}</p>
