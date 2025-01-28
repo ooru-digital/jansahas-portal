@@ -6,6 +6,24 @@ interface WorkHistoryDetailModalProps {
   onClose: () => void;
 }
 
+const formatAddress = (addressFields: {
+  line1?: string;
+  line2?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+}) => {
+  const parts = [
+    addressFields.line1,
+    addressFields.line2,
+    addressFields.city,
+    addressFields.state,
+    addressFields.pincode
+  ].filter(Boolean);
+  
+  return parts.join(', ');
+};
+
 export default function WorkHistoryDetailModal({ workHistory, onClose }: WorkHistoryDetailModalProps) {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-GB');
@@ -82,11 +100,23 @@ export default function WorkHistoryDetailModal({ workHistory, onClose }: WorkHis
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-sm text-gray-500">Present Address</p>
-                    <p className="font-medium">{workHistory.present_address || '-'}</p>
+                    <p className="font-medium">{formatAddress({
+                          line1: workHistory.present_address_line1,
+                          line2: workHistory.present_address_line2,
+                          city: workHistory.present_city,
+                          state: workHistory.present_state,
+                          pincode: workHistory.present_pincode
+                        })}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Permanent Address</p>
-                    <p className="font-medium">{workHistory.permanent_address || '-'}</p>
+                    <p className="font-medium">{formatAddress({
+                          line1: workHistory.permanent_address_line1,
+                          line2: workHistory.permanent_address_line2,
+                          city: workHistory.permanent_city,
+                          state: workHistory.permanent_state,
+                          pincode: workHistory.permanent_pincode
+                        })}</p>
                   </div>
                 </div>
               </div>

@@ -29,8 +29,16 @@ export interface WorkHistoryResponse {
   data: WorkHistory[];
   total_number_of_working_days: number;
   worker_name: string;
-  present_address: string;
-  permanent_address: string;
+  present_address_line1: string;
+  present_address_line2: string;
+  present_city: string;
+  present_state: string;
+  present_pincode: string;
+  permanent_address_line1: string;
+  permanent_address_line2: string;
+  permanent_city: string;
+  permanent_state: string;
+  permanent_pincode: string;
   total_no_of_approved_working_days: number;
   age: string;
   sex: string;

@@ -21,8 +21,16 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
   const [formData, setFormData] = useState<Omit<CreateWorkerData, 'age'> & { age: string }>({
     name: '',
     phone_number: '',
-    present_address: '',
-    permanent_address: '',
+    present_address_line1: '',
+    present_address_line2: '',
+    present_city: '',
+    present_state: '',
+    present_pincode: '',
+    permanent_address_line1: '',
+    permanent_address_line2: '',
+    permanent_city: '',
+    permanent_state: '',
+    permanent_pincode: '',
     organization_id: '',
     age: '',
     gender: 'Male',
@@ -109,6 +117,15 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+    
+    // Apply character limits for address fields
+    if (name.includes('line1') || name.includes('line2') || name.includes('city')) {
+      if (value.length > 30) return;
+    }
+    if (name.includes('state')) {
+      if (value.length > 17) return;
+    }
+
     if (step === 'worker') {
       setFormData(prev => ({
         ...prev,
@@ -217,6 +234,15 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
     const ageNum = parseInt(formData.age, 10);
     if (isNaN(ageNum) || ageNum < 18 || ageNum > 60) {
       toast.error('Please enter a valid age between 18 and 60');
+      return;
+    }
+
+    // Validate pincode
+    const presentPincodeValid = /^\d{6}$/.test(formData.present_pincode);
+    const permanentPincodeValid = /^\d{6}$/.test(formData.permanent_pincode);
+
+    if (!presentPincodeValid || !permanentPincodeValid) {
+      toast.error('Please enter valid 6-digit pincodes');
       return;
     }
 
@@ -390,33 +416,171 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
               )}
             </div>
           </div>
+        </div>
 
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Present Address <span className="text-red-500">*</span>
-            </label>
-            <textarea
-              name="present_address"
-              value={formData.present_address}
-              onChange={handleInputChange}
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
-            />
+        {/* Present Address Fields */}
+        <div className="space-y-6">
+          <div>
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Present Address</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Address Line 1 <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="present_address_line1"
+                  value={formData.present_address_line1}
+                  onChange={handleInputChange}
+                  maxLength={30}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                />
+                <p className="mt-1 text-xs text-gray-500">{formData.present_address_line1.length}/30 characters</p>
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Address Line 2 <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="present_address_line2"
+                  value={formData.present_address_line2}
+                  onChange={handleInputChange}
+                  maxLength={30}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                />
+                <p className="mt-1 text-xs text-gray-500">{formData.present_address_line2.length}/30 characters</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  City <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="present_city"
+                  value={formData.present_city}
+                  onChange={handleInputChange}
+                  maxLength={30}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                />
+                <p className="mt-1 text-xs text-gray-500">{formData.present_city.length}/30 characters</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  State <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="present_state"
+                  value={formData.present_state}
+                  onChange={handleInputChange}
+                  maxLength={17}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                />
+                <p className="mt-1 text-xs text-gray-500">{formData.present_state.length}/17 characters</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Pincode <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="present_pincode"
+                  value={formData.present_pincode}
+                  onChange={handleInputChange}
+                  pattern="[0-9]{6}"
+                  maxLength={6}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                />
+              </div>
+            </div>
           </div>
 
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Permanent Address <span className="text-red-500">*</span>
-            </label>
-            <textarea
-              name="permanent_address"
-              value={formData.permanent_address}
-              onChange={handleInputChange}
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
-            />
+          {/* Permanent Address Fields */}
+          <div>
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Permanent Address</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Address Line 1 <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="permanent_address_line1"
+                  value={formData.permanent_address_line1}
+                  onChange={handleInputChange}
+                  maxLength={30}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                />
+                <p className="mt-1 text-xs text-gray-500">{formData.permanent_address_line1.length}/30 characters</p>
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Address Line 2 <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="permanent_address_line2"
+                  value={formData.permanent_address_line2}
+                  onChange={handleInputChange}
+                  maxLength={30}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                />
+                <p className="mt-1 text-xs text-gray-500">{formData.permanent_address_line2.length}/30 characters</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  City <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="permanent_city"
+                  value={formData.permanent_city}
+                  onChange={handleInputChange}
+                  maxLength={30}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                />
+                <p className="mt-1 text-xs text-gray-500">{formData.permanent_city.length}/30 characters</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  State <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="permanent_state"
+                  value={formData.permanent_state}
+                  onChange={handleInputChange}
+                  maxLength={17}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                />
+                <p className="mt-1 text-xs text-gray-500">{formData.permanent_state.length}/17 characters</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Pincode <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="permanent_pincode"
+                  value={formData.permanent_pincode}
+                  onChange={handleInputChange}
+                  pattern="[0-9]{6}"
+                  maxLength={6}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                />
+              </div>
+            </div>
           </div>
         </div>
 

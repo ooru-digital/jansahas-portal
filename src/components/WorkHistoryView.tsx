@@ -20,6 +20,24 @@ const maskPhoneNumber = (phone: string) => {
   return phone.replace(/(\d{2})(\d{4})(\d{4})/, '$1****$3');
 };
 
+const formatAddress = (addressFields: {
+  line1?: string;
+  line2?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+}) => {
+  const parts = [
+    addressFields.line1,
+    addressFields.line2,
+    addressFields.city,
+    addressFields.state,
+    addressFields.pincode
+  ].filter(Boolean);
+  
+  return parts.join(', ');
+};
+
 export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewProps) {
   const [workHistoryData, setWorkHistoryData] = useState<WorkHistoryResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -483,11 +501,27 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
               <div className="space-y-4">
                 <div>
                   <p className="text-sm text-gray-500">Present Address</p>
-                  <p className="text-sm font-medium text-gray-900">{workHistoryData.present_address || '-'}</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {workHistoryData && formatAddress({
+                      line1: workHistoryData.present_address_line1,
+                      line2: workHistoryData.present_address_line2,
+                      city: workHistoryData.present_city,
+                      state: workHistoryData.present_state,
+                      pincode: workHistoryData.present_pincode
+                    })}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Permanent Address</p>
-                  <p className="text-sm font-medium text-gray-900">{workHistoryData.permanent_address || '-'}</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {workHistoryData && formatAddress({
+                      line1: workHistoryData.permanent_address_line1,
+                      line2: workHistoryData.permanent_address_line2,
+                      city: workHistoryData.permanent_city,
+                      state: workHistoryData.permanent_state,
+                      pincode: workHistoryData.permanent_pincode
+                    })}
+                  </p>
                 </div>
               </div>
             </div>

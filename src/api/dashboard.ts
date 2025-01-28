@@ -38,8 +38,16 @@ export interface WorkHistoryDetail extends WorkDetail {
   phone_number?: string;
   age?: string;
   sex?: string;
-  present_address?: string;
-  permanent_address?: string;
+  present_address_line1: string;
+  present_address_line2: string;
+  present_city: string;
+  present_state: string;
+  present_pincode: string;
+  permanent_address_line1: string;
+  permanent_address_line2: string;
+  permanent_city: string;
+  permanent_state: string;
+  permanent_pincode: string;
   avg_daily_wages: number;
   approved_by?: string;
   rejected_by?: string;
