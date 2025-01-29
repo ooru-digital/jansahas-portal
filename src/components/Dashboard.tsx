@@ -6,7 +6,7 @@ import { getAllSites, Site } from '../api/sites';
 import { getOrganizations, Organization } from '../api/organizations';
 import WorkHistoryDetailModal from './WorkHistoryDetailModal';
 
-type ActiveView = 'dashboard' | 'workers' | 'approvals';
+type ActiveView = "dashboard" | "workers" | "approvals";
 
 interface DashboardProps {
   onNavigate: (view: ActiveView) => void;
@@ -20,34 +20,34 @@ interface ListModalProps {
   items: Array<Site | Organization>;
 }
 
-const WorkList = ({ title, works, icon: Icon, colorClass, onWorkClick }: { 
+const WorkList = ({
+  title,
+  works,
+  onWorkClick,
+}: {
   title: string;
   works: WorkDetail[];
   icon: React.ElementType;
   colorClass: string;
   onWorkClick: (workId: number) => void;
 }) => (
-  <div className="bg-white rounded-xl shadow-sm p-6">
-    <h2 className="text-2xl font-bold mb-6">{title}</h2>
+  <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
+    <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">{title}</h2>
     <div className="overflow-x-auto">
-      <table className="min-w-full">
-        <thead>
+      <table className="w-full">
+        <thead className="sr-only sm:not-sr-only">
           <tr className="border-b">
-            <th className="text-left pb-3 text-gray-600 font-medium">Image</th>
+            <th className="text-left pb-3 text-gray-600 font-medium w-16">Image</th>
             <th className="text-left pb-3 text-gray-600 font-medium">Worker</th>
-            <th className="text-left pb-3 text-gray-600 font-medium">Work Name</th>
-            <th className="text-center pb-3 text-gray-600 font-medium">Created At</th>
-            <th className="text-center pb-3 text-gray-600 font-medium">Status</th>
+            <th className="text-left pb-3 text-gray-600 font-medium hidden sm:table-cell">Work Name</th>
+            <th className="text-left pb-3 text-gray-600 font-medium hidden md:table-cell">Created At</th>
+            <th className="text-left pb-3 text-gray-600 font-medium">Status</th>
           </tr>
         </thead>
         <tbody className="divide-y">
           {works.map((work) => (
-            <tr 
-              key={work.id} 
-              className="hover:bg-gray-50 cursor-pointer"
-              onClick={() => onWorkClick(work.id)}
-            >
-              <td className="py-4 pr-4">
+            <tr key={work.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => onWorkClick(work.id)}>
+              <td className="py-4 pr-4 align-top">
                 {work.photograph ? (
                   <img
                     src={work.photograph}
@@ -62,29 +62,32 @@ const WorkList = ({ title, works, icon: Icon, colorClass, onWorkClick }: {
               </td>
               <td className="py-4">
                 <p className="font-medium text-gray-900">{work.worker_name}</p>
-                <p className="text-xs text-gray-500">{work.site_name} - {work.organization_name}</p>
+                <p className="text-xs text-gray-500 sm:hidden">
+                  {work.work_name} - {work.work_type}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {work.site_name} - {work.organization_name}
+                </p>
               </td>
-              <td className="py-4">
+              <td className="py-4 hidden sm:table-cell">
                 <p className="text-sm text-gray-900">{work.work_name}</p>
                 <p className="text-xs text-gray-500">{work.work_type}</p>
               </td>
-              <td className="py-4 text-center">
-                <p className="text-sm text-gray-500">
-                  {new Date(work.created_at).toLocaleDateString('en-GB')}
-                </p>
+              <td className="py-4 hidden md:table-cell">
+                <p className="text-sm text-gray-500">{new Date(work.created_at).toLocaleDateString("en-GB")}</p>
               </td>
               <td className="py-4">
-                <div className="flex justify-center">
-                  <span className={`inline-flex px-3 py-1 text-xs font-medium rounded-full ${
-                    work.status === 'pending'
-                      ? 'bg-yellow-100 text-yellow-800'
-                      : work.status === 'approved'
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-red-100 text-red-800'
-                  }`}>
-                    {work.status.charAt(0).toUpperCase() + work.status.slice(1)}
-                  </span>
-                </div>
+                <span
+                  className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                    work.status === "pending"
+                      ? "bg-yellow-100 text-yellow-800"
+                      : work.status === "approved"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-red-100 text-red-800"
+                  }`}
+                >
+                  {work.status.charAt(0).toUpperCase() + work.status.slice(1)}
+                </span>
               </td>
             </tr>
           ))}
@@ -109,33 +112,65 @@ const ListModal: React.FC<ListModalProps> = ({ isOpen, onClose, title, type, ite
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-4xl w-full">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-500"
-          >
+      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+        <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900">{title}</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-500">
             <X className="h-6 w-6" />
           </button>
         </div>
-        <div className="p-6">
+        <div className="p-4 sm:p-6 overflow-y-auto">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  {type === 'sites' ? (
+                  {type === "sites" ? (
                     <>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Site Name</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Organization</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Site Location</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created At</th>
+                      <th
+                        scope="col"
+                        className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
+                        Site Name
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
+                        Organization
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
+                        Site Location
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
+                        Created At
+                      </th>
                     </>
                   ) : (
                     <>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
-                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created At</th>
+                      <th
+                        scope="col"
+                        className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
+                        Name
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
+                        Location
+                      </th>
+                      <th
+                        scope="col"
+                        className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
+                        Created At
+                      </th>
                     </>
                   )}
                 </tr>
@@ -143,30 +178,30 @@ const ListModal: React.FC<ListModalProps> = ({ isOpen, onClose, title, type, ite
               <tbody className="bg-white divide-y divide-gray-200">
                 {items.map((item) => (
                   <tr key={item.id} className="hover:bg-gray-50">
-                    {type === 'sites' ? (
+                    {type === "sites" ? (
                       <>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           {(item as Site).name}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {(item as Site).organization_name}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {(item as Site).location}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {formatDate((item as Site).created_at)}
                         </td>
                       </>
                     ) : (
                       <>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           {(item as Organization).name}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {(item as Organization).location || 'N/A'}
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {(item as Organization).location || "N/A"}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {formatDate((item as Organization).created_at)}
                         </td>
                       </>
@@ -175,7 +210,7 @@ const ListModal: React.FC<ListModalProps> = ({ isOpen, onClose, title, type, ite
                 ))}
                 {items.length === 0 && (
                   <tr>
-                    <td colSpan={type === 'sites' ? 4 : 3} className="px-6 py-4 text-center text-gray-500">
+                    <td colSpan={type === "sites" ? 4 : 3} className="px-3 sm:px-6 py-4 text-center text-gray-500">
                       No items found
                     </td>
                   </tr>
@@ -211,10 +246,10 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
       setLoading(true);
       const [countsData, pendingData, approvedData, rejectedData] = await Promise.all([
         getDashboardCounts(),
-        getRecentWorkDetails('pending'),
-        getRecentWorkDetails('approved'),
-        getRecentWorkDetails('rejected')
-      ]);
+        getRecentWorkDetails("pending"),
+        getRecentWorkDetails("approved"),
+        getRecentWorkDetails("rejected"),
+      ])
 
       setCounts(countsData);
       setPendingWorks(pendingData || []);
@@ -236,7 +271,7 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
       setSites(data);
       setShowSitesModal(true);
     } catch (error) {
-      toast.error('Failed to fetch sites');
+      toast.error("Failed to fetch sites");
     }
   };
 
@@ -246,7 +281,7 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
       setOrganizations(data);
       setShowOrganizationsModal(true);
     } catch (error) {
-      toast.error('Failed to fetch organizations');
+      toast.error("Failed to fetch organizations");
     }
   };
 
@@ -255,7 +290,7 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
       const workHistory = await getWorkHistoryDetail(workId);
       setSelectedWorkHistory(workHistory);
     } catch (error) {
-      toast.error('Failed to fetch work history details');
+      toast.error("Failed to fetch work history details");
     }
   };
 
@@ -286,89 +321,93 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
 
   return (
     <>
-      <div className="min-h-screen bg-gray-50 p-6">
+      <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl font-bold text-gray-900 mb-8">Dashboard</h1>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-            <div className="bg-white rounded-xl shadow-sm p-6">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6 sm:mb-8">Dashboard</h1>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+            <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
               <div className="flex items-center justify-between">
                 <div className="flex-1 text-center">
                   <p className="text-sm font-medium text-gray-600">Pending Approvals</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-1">{counts?.pending_approval_count || 0}</p>
+                  <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">
+                    {counts?.pending_approval_count || 0}
+                  </p>
                 </div>
-                <Clock className="h-10 w-10 text-yellow-600 flex-shrink-0" />
+                <Clock className="h-8 w-8 sm:h-10 sm:w-10 text-yellow-600 flex-shrink-0" />
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm p-6">
+            <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
               <div className="flex items-center justify-between">
                 <div className="flex-1 text-center">
                   <p className="text-sm font-medium text-gray-600">Approved Works</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-1">{counts?.approved_work_count || 0}</p>
+                  <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">{counts?.approved_work_count || 0}</p>
                 </div>
-                <CheckSquare className="h-10 w-10 text-green-600 flex-shrink-0" />
+                <CheckSquare className="h-8 w-8 sm:h-10 sm:w-10 text-green-600 flex-shrink-0" />
               </div>
             </div>
 
             {counts?.rejected_work_count !== undefined && (
-              <div className="bg-white rounded-xl shadow-sm p-6">
+              <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex-1 text-center">
                     <p className="text-sm font-medium text-gray-600">Total Rejections</p>
-                    <p className="text-2xl font-bold text-gray-900 mt-1">{counts.rejected_work_count}</p>
+                    <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">{counts.rejected_work_count}</p>
                   </div>
-                  <XCircle className="h-10 w-10 text-red-600 flex-shrink-0" />
+                  <XCircle className="h-8 w-8 sm:h-10 sm:w-10 text-red-600 flex-shrink-0" />
                 </div>
               </div>
             )}
 
             <button
               onClick={handleOrganizationsClick}
-              className="bg-white rounded-xl shadow-sm p-6 hover:bg-gray-50 transition-colors duration-200"
+              className="bg-white rounded-xl shadow-sm p-4 sm:p-6 hover:bg-gray-50 transition-colors duration-200"
             >
               <div className="flex items-center justify-between">
                 <div className="flex-1">
                   <p className="text-sm font-medium text-gray-600">Total Organizations</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-1">{counts?.total_organizations || 0}</p>
+                  <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">{counts?.total_organizations || 0}</p>
                 </div>
-                <Building2 className="h-10 w-10 text-orange-600 flex-shrink-0" />
+                <Building2 className="h-8 w-8 sm:h-10 sm:w-10 text-orange-600 flex-shrink-0" />
               </div>
             </button>
 
             <button
               onClick={handleSitesClick}
-              className="bg-white rounded-xl shadow-sm p-6 hover:bg-gray-50 transition-colors duration-200"
+              className="bg-white rounded-xl shadow-sm p-4 sm:p-6 hover:bg-gray-50 transition-colors duration-200"
             >
               <div className="flex items-center justify-between">
                 <div className="flex-1">
                   <p className="text-sm font-medium text-gray-600">Total Sites</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-1">{counts?.total_sites || 0}</p>
+                  <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">{counts?.total_sites || 0}</p>
                 </div>
-                <Building2 className="h-10 w-10 text-blue-600 flex-shrink-0" />
+                <Building2 className="h-8 w-8 sm:h-10 sm:w-10 text-blue-600 flex-shrink-0" />
               </div>
             </button>
 
-            <div className="bg-white rounded-xl shadow-sm p-6">
+            <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
               <div className="flex items-center justify-between">
                 <div className="flex-1 text-center">
                   <p className="text-sm font-medium text-gray-600">Authorized Signatories</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-1">{counts?.total_authorized_signatories || 0}</p>
+                  <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">
+                    {counts?.total_authorized_signatories || 0}
+                  </p>
                 </div>
-                <Users className="h-10 w-10 text-purple-600 flex-shrink-0" />
+                <Users className="h-8 w-8 sm:h-10 sm:w-10 text-purple-600 flex-shrink-0" />
               </div>
             </div>
 
             <button
-              onClick={() => onNavigate('workers')}
-              className="bg-white rounded-xl shadow-sm p-6 hover:bg-gray-50 transition-colors duration-200"
+              onClick={() => onNavigate("workers")}
+              className="bg-white rounded-xl shadow-sm p-4 sm:p-6 hover:bg-gray-50 transition-colors duration-200"
             >
               <div className="flex items-center justify-between">
                 <div className="flex-1">
                   <p className="text-sm font-medium text-gray-600">Total Workers</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-1">{counts?.total_workers || 0}</p>
+                  <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">{counts?.total_workers || 0}</p>
                 </div>
-                <UserRound className="h-10 w-10 text-indigo-600 flex-shrink-0" />
+                <UserRound className="h-8 w-8 sm:h-10 sm:w-10 text-indigo-600 flex-shrink-0" />
               </div>
             </button>
           </div>
@@ -414,10 +453,7 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
           />
 
           {selectedWorkHistory && (
-            <WorkHistoryDetailModal
-              workHistory={selectedWorkHistory}
-              onClose={() => setSelectedWorkHistory(null)}
-            />
+            <WorkHistoryDetailModal workHistory={selectedWorkHistory} onClose={() => setSelectedWorkHistory(null)} />
           )}
         </div>
       </div>

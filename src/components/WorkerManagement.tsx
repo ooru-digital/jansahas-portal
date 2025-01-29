@@ -32,12 +32,14 @@ export default function WorkerManagement() {
     approvedDays: string;
     vcStatus: string;
   }>(() => {
-    const savedFilters = sessionStorage.getItem('workersFilters');
-    return savedFilters ? JSON.parse(savedFilters) : {
-      gender: '',
-      approvedDays: '',
-      vcStatus: '',
-    };
+    const savedFilters = sessionStorage.getItem("workersFilters");
+    return savedFilters
+      ? JSON.parse(savedFilters)
+      : {
+          gender: "",
+          approvedDays: "",
+          vcStatus: "",
+        };
   });
 
   useEffect(() => {
@@ -45,7 +47,7 @@ export default function WorkerManagement() {
   }, [searchTerm]);
 
   useEffect(() => {
-    const userInfoStr = localStorage.getItem('userInfo');
+    const userInfoStr = localStorage.getItem("userInfo");
     if (userInfoStr) {
       const { is_jansathi } = JSON.parse(userInfoStr);
       setIsJansathi(is_jansathi);
@@ -57,68 +59,74 @@ export default function WorkerManagement() {
   }, []);
 
   useEffect(() => {
-    sessionStorage.setItem('workersFilters', JSON.stringify(filters));
+    sessionStorage.setItem("workersFilters", JSON.stringify(filters));
   }, [filters]);
 
   useEffect(() => {
-    sessionStorage.setItem('workersSearchTerm', searchTerm);
+    sessionStorage.setItem("workersSearchTerm", searchTerm);
   }, [searchTerm]);
 
-  const buildQueryParams = useCallback((pageOffset: number = 0): WorkersQueryParams => {
-    const params: WorkersQueryParams = {
-      limit: 10,
-      offset: pageOffset
-    };
-
-    if (searchTermRef.current.trim()) {
-      params.search = searchTermRef.current.trim();
-    }
-
-    if (filters.gender) {
-      params.gender = filters.gender as 'male' | 'female';
-    }
-
-    if (filters.approvedDays) {
-      params.approved_worker_days = filters.approvedDays as 'lt_90' | 'gt_90';
-    }
-
-    if (filters.vcStatus) {
-      params.vc_generated = filters.vcStatus === 'generated';
-    }
-
-    return params;
-  }, [filters]);
-
-  const fetchWorkers = useCallback(async (pageOffset?: number, isSearching: boolean = false) => {
-    try {
-      if (isSearching) {
-        setTableLoading(true);
-      } else {
-        setLoading(true);
+  const buildQueryParams = useCallback(
+    (pageOffset = 0): WorkersQueryParams => {
+      const params: WorkersQueryParams = {
+        limit: 10,
+        offset: pageOffset,
       }
 
-      const params = buildQueryParams(pageOffset);
-      const data = await WorkerAPI.getWorkers(params);
-      setWorkersData(data);
-    } catch (error) {
-      toast.error('Failed to fetch workers');
-    } finally {
-      setLoading(false);
-      setTableLoading(false);
-    }
-  }, [buildQueryParams]);
+      if (searchTermRef.current.trim()) {
+        params.search = searchTermRef.current.trim();
+      }
+
+      if (filters.gender) {
+        params.gender = filters.gender as "male" | "female";
+      }
+
+      if (filters.approvedDays) {
+        params.approved_worker_days = filters.approvedDays as "lt_90" | "gt_90";
+      }
+
+      if (filters.vcStatus) {
+        params.vc_generated = filters.vcStatus === "generated";
+      }
+
+      return params;
+    },
+    [filters],
+  );
+
+  const fetchWorkers = useCallback(
+    async (pageOffset?: number, isSearching = false) => {
+      try {
+        if (isSearching) {
+          setTableLoading(true);
+        } else {
+          setLoading(true);
+        }
+
+        const params = buildQueryParams(pageOffset);
+        const data = await WorkerAPI.getWorkers(params);
+        setWorkersData(data);
+      } catch (error) {
+        toast.error("Failed to fetch workers");
+      } finally {
+        setLoading(false);
+        setTableLoading(false);
+      }
+    },
+    [buildQueryParams],
+  );
 
   const debouncedFetch = useCallback(
     debounce(() => {
       fetchWorkers(0, true);
     }, 300),
-    [fetchWorkers]
+    [fetchWorkers],
   );
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchTerm(value);
-    sessionStorage.setItem('workersSearchTerm', value);
+    sessionStorage.setItem("workersSearchTerm", value);
     debouncedFetch();
   };
 
@@ -127,7 +135,7 @@ export default function WorkerManagement() {
     
     const newFilters = {
       ...filters,
-      [name]: value
+      [name]: value,
     };
     setFilters(newFilters);
 
@@ -135,7 +143,7 @@ export default function WorkerManagement() {
       setTableLoading(true);
       const params: WorkersQueryParams = {
         limit: 10,
-        offset: 0
+        offset: 0,
       };
 
       if (searchTerm.trim()) {
@@ -143,35 +151,35 @@ export default function WorkerManagement() {
       }
 
       if (newFilters.gender) {
-        params.gender = newFilters.gender as 'male' | 'female';
+        params.gender = newFilters.gender as "male" | "female";
       }
 
       if (newFilters.approvedDays) {
-        params.approved_worker_days = newFilters.approvedDays as 'lt_90' | 'gt_90';
+        params.approved_worker_days = newFilters.approvedDays as "lt_90" | "gt_90";
       }
 
       if (newFilters.vcStatus) {
-        params.vc_generated = newFilters.vcStatus === 'generated';
+        params.vc_generated = newFilters.vcStatus === "generated";
       }
 
       const data = await WorkerAPI.getWorkers(params);
       setWorkersData(data);
     } catch (error) {
-      toast.error('Failed to fetch workers');
+      toast.error("Failed to fetch workers");
     } finally {
       setTableLoading(false);
     }
   };
 
   const clearFilters = async () => {
-    sessionStorage.removeItem('workersSearchTerm');
-    sessionStorage.removeItem('workersFilters');
+    sessionStorage.removeItem("workersSearchTerm");
+    sessionStorage.removeItem("workersFilters");
 
-    setSearchTerm('');
+    setSearchTerm("");
     setFilters({
-      gender: '',
-      approvedDays: '',
-      vcStatus: '',
+      gender: "",
+      approvedDays: "",
+      vcStatus: "",
     });
 
     try {
@@ -179,7 +187,7 @@ export default function WorkerManagement() {
       const data = await WorkerAPI.getWorkers({ limit: 10, offset: 0 });
       setWorkersData(data);
     } catch (error) {
-      toast.error('Failed to fetch workers');
+      toast.error("Failed to fetch workers");
     } finally {
       setTableLoading(false);
     }
@@ -196,9 +204,9 @@ export default function WorkerManagement() {
     try {
       await WorkerAPI.deleteWorker(deletingWorkerId);
       fetchWorkers();
-      toast.success('Worker deleted successfully');
+      toast.success("Worker deleted successfully");
     } catch (error) {
-      toast.error('Failed to delete worker');
+      toast.error("Failed to delete worker");
     } finally {
       setShowDeleteModal(false);
       setDeletingWorkerId(null);
@@ -232,10 +240,10 @@ export default function WorkerManagement() {
   async function handlePaginationClick(url: string) {
     try {
       const urlObj = new URL(url);
-      const offset = parseInt(urlObj.searchParams.get('offset') || '0');
+      const offset = Number.parseInt(urlObj.searchParams.get("offset") || "0");
       fetchWorkers(offset, true);
     } catch (error) {
-      toast.error('Failed to fetch workers');
+      toast.error("Failed to fetch workers");
     }
   }
 
@@ -252,12 +260,12 @@ export default function WorkerManagement() {
       <div className="min-h-screen bg-gray-50">
         <div className="py-4 md:py-6 px-4 md:px-6">
           <div className="max-w-7xl mx-auto">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Workers</h1>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Workers</h1>
               <div className="flex flex-col sm:flex-row gap-3">
                 {!isJansathi && (
                   <button
-                    onClick={() => navigate('/workers/add-in-bulk')}
+                    onClick={() => navigate("/workers/add-in-bulk")}
                     className="inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 w-full sm:w-auto"
                   >
                     <Upload className="h-4 w-4 mr-2" />
@@ -265,7 +273,7 @@ export default function WorkerManagement() {
                   </button>
                 )}
                 <button
-                  onClick={() => navigate('/workers/add-worker')}
+                  onClick={() => navigate("/workers/add-worker")}
                   className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
                 >
                   <Plus className="h-4 w-4 mr-2" />
@@ -275,9 +283,9 @@ export default function WorkerManagement() {
             </div>
 
             <div className="bg-white rounded-lg shadow">
-              <div className="p-4 md:p-6 border-b border-gray-200">
-                <div className="flex flex-col md:flex-row gap-4">
-                  <div className="w-full md:w-64">
+              <div className="p-4 sm:p-6 border-b border-gray-200">
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <div className="w-full sm:w-64">
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                       <input
@@ -343,30 +351,67 @@ export default function WorkerManagement() {
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                   </div>
                 )}
-                <div className="inline-block min-w-full align-middle">
+
+                {/* Desktop view (table) */}
+                <div className="hidden lg:block min-w-full">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Photo</th>
-                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Age</th>
-                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gender</th>
-                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone Number</th>
-                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Approved Days</th>
-                        <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        <th
+                          scope="col"
+                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          Photo
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          Name
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          Age
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          Gender
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          Phone Number
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          Approved Days
+                        </th>
+                        <th
+                          scope="col"
+                          className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        >
+                          Actions
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                       {workersData?.results.map((worker) => (
-                        <tr 
-                          key={worker.id} 
+                        <tr
+                          key={worker.id}
                           className="hover:bg-gray-50 cursor-pointer"
                           onClick={() => handleRowClick(worker.id)}
                         >
                           <td className="px-4 py-3">
                             {worker.photograph ? (
                               <img
-                                src={worker.photograph}
+                                src={worker.photograph || "/placeholder.svg"}
                                 alt={worker.name}
                                 className="h-10 w-10 rounded-full object-cover"
                               />
@@ -389,8 +434,8 @@ export default function WorkerManagement() {
                             <div className="text-sm text-gray-500 flex items-center gap-2">
                               {worker.phone_number ? (
                                 <>
-                                  {showPhoneNumbers.has(worker.id) 
-                                    ? worker.phone_number 
+                                  {showPhoneNumbers.has(worker.id)
+                                    ? worker.phone_number
                                     : maskPhoneNumber(worker.phone_number)}
                                   <button
                                     onClick={(e) => togglePhoneVisibility(worker.id, e)}
@@ -404,21 +449,19 @@ export default function WorkerManagement() {
                                   </button>
                                 </>
                               ) : (
-                                'N/A'
+                                "NA"
                               )}
                             </div>
                           </td>
                           <td className="px-4 py-3">
-                            <div className="text-sm text-gray-500">
-                              {worker.total_approved_work_days || 0}
-                            </div>
+                            <div className="text-sm text-gray-500">{worker.total_approved_work_days || 0}</div>
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex items-center justify-center space-x-3">
                               <button
                                 onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleEditWorker(worker);
+                                  e.stopPropagation()
+                                  handleEditWorker(worker)
                                 }}
                                 className="text-blue-600 hover:text-blue-900 p-1.5 rounded-full hover:bg-blue-50"
                                 title="Edit Worker"
@@ -439,79 +482,159 @@ export default function WorkerManagement() {
                           </td>
                         </tr>
                       ))}
-                      {!workersData?.results.length && (
-                        <tr>
-                          <td colSpan={7} className="px-4 py-4 text-center text-gray-500">
-                            No workers found
-                          </td>
-                        </tr>
-                      )}
                     </tbody>
                   </table>
                 </div>
+
+                {/* Mobile and Tablet view (cards) */}
+                <div className="lg:hidden">
+                  <div className="grid grid-cols-1 gap-2 p-2">
+                    {" "}
+                    {/* Updated grid class */}
+                    {workersData?.results.map((worker) => (
+                      <div
+                        key={worker.id}
+                        className="bg-white shadow rounded-md overflow-hidden hover:shadow-md transition-shadow duration-300 cursor-pointer"
+                        onClick={() => handleRowClick(worker.id)}
+                      >
+                        <div className="p-3 flex items-center space-x-3">
+                          {" "}
+                          {/* Updated padding and spacing */}
+                          {worker.photograph ? (
+                            <img
+                              src={worker.photograph || "/placeholder.svg"}
+                              alt={worker.name}
+                              className="h-10 w-10 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="h-10 w-10 rounded-full bg-gray-100 flex items-center justify-center">
+                              <User className="h-5 w-5 text-gray-400" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <p className="text-sm font-medium text-gray-900 truncate">{worker.name}</p>
+                                <p className="text-xs text-gray-500">
+                                  {worker.gender}, {worker.age} yrs | Days: {worker.total_approved_work_days || 0}
+                                </p>
+                              </div>
+                              <div className="flex space-x-2">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleEditWorker(worker)
+                                  }}
+                                  className="text-blue-600 hover:text-blue-900 p-1 rounded-full hover:bg-blue-50"
+                                  title="Edit Worker"
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleDeleteWorker(worker.id)
+                                  }}
+                                  className="text-red-600 hover:text-red-900 p-1 rounded-full hover:bg-red-50"
+                                  title="Delete Worker"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </div>
+                            </div>
+                            <p className="text-xs text-gray-500 flex items-center mt-1">
+                              {worker.phone_number ? (
+                                <>
+                                  {showPhoneNumbers.has(worker.id)
+                                    ? worker.phone_number
+                                    : maskPhoneNumber(worker.phone_number)}
+                                  <button
+                                    onClick={(e) => togglePhoneVisibility(worker.id, e)}
+                                    className="ml-1 text-gray-400 hover:text-gray-600"
+                                  >
+                                    {showPhoneNumbers.has(worker.id) ? (
+                                      <EyeOff className="h-3 w-3" />
+                                    ) : (
+                                      <Eye className="h-3 w-3" />
+                                    )}
+                                  </button>
+                                </>
+                              ) : (
+                                "N/A"
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {!workersData?.results.length && <div className="text-center py-8 text-gray-500">No workers found</div>}
               </div>
 
               {workersData && (workersData.next || workersData.previous) && (
-                <div className="px-4 py-3 border-t border-gray-200 flex items-center justify-between">
-                  <div className="flex-1 flex justify-between sm:hidden">
-                    <button
-                      onClick={() => workersData.previous && handlePaginationClick(workersData.previous)}
-                      disabled={!workersData.previous}
-                      className={`relative inline-flex items-center px-4 py-2 text-sm font-medium rounded-md ${
-                        workersData.previous
-                          ? 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
-                          : 'text-gray-400 bg-gray-100 cursor-not-allowed'
-                      }`}
-                    >
-                      Previous
-                    </button>
-                    <button
-                      onClick={() => workersData.next && handlePaginationClick(workersData.next)}
-                      disabled={!workersData.next}
-                      className={`relative inline-flex items-center px-4 py-2 text-sm font-medium rounded-md ${
-                        workersData.next
-                          ? 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
-                          : 'text-gray-400 bg-gray-100 cursor-not-allowed'
-                      }`}
-                    >
-                      Next
-                    </button>
-                  </div>
-                  <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                    <div>
-                      <p className="text-sm text-gray-700">
-                        Showing <span className="font-medium">1</span> to{' '}
-                        <span className="font-medium">{workersData.results.length}</span> of{' '}
-                        <span className="font-medium">{workersData.count}</span> results
-                      </p>
+                <div className="px-4 py-3 border-t border-gray-200 sm:px-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1 flex justify-between sm:hidden">
+                      <button
+                        onClick={() => workersData.previous && handlePaginationClick(workersData.previous)}
+                        disabled={!workersData.previous}
+                        className={`relative inline-flex items-center px-4 py-2 text-sm font-medium rounded-md ${
+                          workersData.previous
+                            ? "text-gray-700 bg-white border border-gray-300 hover:bg-gray-50"
+                            : "text-gray-400 bg-gray-100 cursor-not-allowed"
+                        }`}
+                      >
+                        Previous
+                      </button>
+                      <button
+                        onClick={() => workersData.next && handlePaginationClick(workersData.next)}
+                        disabled={!workersData.next}
+                        className={`ml-3 relative inline-flex items-center px-4 py-2 text-sm font-medium rounded-md ${
+                          workersData.next
+                            ? "text-gray-700 bg-white border border-gray-300 hover:bg-gray-50"
+                            : "text-gray-400 bg-gray-100 cursor-not-allowed"
+                        }`}
+                      >
+                        Next
+                      </button>
                     </div>
-                    <div>
-                      <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                        <button
-                          onClick={() => workersData.previous && handlePaginationClick(workersData.previous)}
-                          disabled={!workersData.previous}
-                          className={`relative inline-flex items-center px-4 py-2 rounded-l-md border text-sm font-medium ${
-                            workersData.previous
-                              ? 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50'
-                              : 'text-gray-400 bg-gray-100 cursor-not-allowed'
-                          }`}
+                    <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                      <div>
+                        <p className="text-sm text-gray-700">
+                          Showing <span className="font-medium">1</span> to{" "}
+                          <span className="font-medium">{workersData.results.length}</span> of{" "}
+                          <span className="font-medium">{workersData.count}</span> results
+                        </p>
+                      </div>
+                      <div>
+                        <nav
+                          className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+                          aria-label="Pagination"
                         >
-                          <ChevronLeft className="h-4 w-4" />
-                          Previous
-                        </button>
-                        <button
-                          onClick={() => workersData.next && handlePaginationClick(workersData.next)}
-                          disabled={!workersData.next}
-                          className={`relative inline-flex items-center px-4 py-2 rounded-r-md border text-sm font-medium ${
-                            workersData.next
-                              ? 'text-gray-700 bg-white border-gray-300 hover:bg-gray-50'
-                              : 'text-gray-400 bg-gray-100 cursor-not-allowed'
-                          }`}
-                        >
-                          Next
-                          <ChevronRight className="h-4 w-4" />
-                        </button>
-                      </nav>
+                          <button
+                            onClick={() => workersData.previous && handlePaginationClick(workersData.previous)}
+                            disabled={!workersData.previous}
+                            className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 ${
+                              !workersData.previous && "cursor-not-allowed"
+                            }`}
+                          >
+                            <span className="sr-only">Previous</span>
+                            <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+                          </button>
+                          <button
+                            onClick={() => workersData.next && handlePaginationClick(workersData.next)}
+                            disabled={!workersData.next}
+                            className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 ${
+                              !workersData.next && "cursor-not-allowed"
+                            }`}
+                          >
+                            <span className="sr-only">Next</span>
+                            <ChevronRight className="h-5 w-5" aria-hidden="true" />
+                          </button>
+                        </nav>
+                      </div>
                     </div>
                   </div>
                 </div>

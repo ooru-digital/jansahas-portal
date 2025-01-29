@@ -93,12 +93,12 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
 
   const [formData, setFormData] = useState<CreateWorkHistoryData>({
     worker_id: workerId,
-    work_name: '',
-    work_type: '',
-    start_date: '',
-    end_date: '',
-    site_id: '',
-    organization_id: '',
+    work_name: "",
+    work_type: "",
+    start_date: "",
+    end_date: "",
+    site_id: "",
+    organization_id: "",
   });
 
   useEffect(() => {
@@ -138,7 +138,7 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
       const data = await OrganizationsAPI.getOrganizations();
       setOrganizations(data);
     } catch (error) {
-      toast.error('Failed to fetch organizations');
+      toast.error("Failed to fetch organizations");
     }
   };
 
@@ -147,7 +147,7 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
       const data = await OrganizationsAPI.getSitesByOrganization(organizationId);
       setSites(data);
     } catch (error) {
-      toast.error('Failed to fetch sites');
+      toast.error("Failed to fetch sites");
     }
   };
 
@@ -155,7 +155,7 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: {
-          facingMode: 'user',
+          facingMode: "user",
           width: { ideal: 1280 },
           height: { ideal: 720 }
         }
@@ -167,7 +167,7 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
         videoRef.current.srcObject = mediaStream;
       }
     } catch (error) {
-      toast.error('Unable to access camera');
+      toast.error("Unable to access camera");
       setShowCamera(false);
     }
   };
@@ -179,7 +179,7 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
 
   const stopCamera = () => {
     if (stream) {
-      stream.getTracks().forEach(track => track.stop());
+      stream.getTracks().forEach((track) => track.stop());
       setStream(null);
     }
     setShowCamera(false);
@@ -207,16 +207,17 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
       const base64Image = canvas.toDataURL('image/jpeg', 0.8);
       
       // Update the worker's photo
-      api.patch(`/worker/${workerId}/update/`, {
-        photograph: base64Image
-      })
-      .then(() => {
-        toast.success('Photo updated successfully');
-        fetchWorkHistory(); // Refresh worker data
-      })
-      .catch(() => {
-        toast.error('Failed to update photo');
-      });
+      api
+        .patch(`/worker/${workerId}/update/`, {
+          photograph: base64Image,
+        })
+        .then(() => {
+          toast.success("Photo updated successfully")
+          fetchWorkHistory(); // Refresh worker data
+        })
+        .catch(() => {
+          toast.error("Failed to update photo");
+        });
 
       stopCamera();
     }
@@ -225,27 +226,27 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.type.startsWith('image/')) {
+      if (file.type.startsWith("image/")) {
         try {
           const reader = new FileReader();
           reader.onload = async () => {
             const base64Image = reader.result as string;
             try {
               await api.patch(`/worker/${workerId}/update/`, {
-                photograph: base64Image
+                photograph: base64Image,
               });
-              toast.success('Photo updated successfully');
+              toast.success("Photo updated successfully");
               fetchWorkHistory(); // Refresh worker data
             } catch (error) {
-              toast.error('Failed to update photo');
+              toast.error("Failed to update photo");
             }
-          };
+          }
           reader.readAsDataURL(file);
         } catch (error) {
-          toast.error('Failed to process image');
+          toast.error("Failed to process image");
         }
       } else {
-        toast.error('Please upload an image file');
+        toast.error("Please upload an image file");
       }
     }
   };
@@ -255,25 +256,25 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
     try {
       if (editingHistory) {
         await WorkHistoryAPI.updateWorkHistory(editingHistory.id, formData);
-        toast.success('Work history updated successfully');
+        toast.success("Work history updated successfully");
       } else {
         await WorkHistoryAPI.createWorkHistory(formData);
-        toast.success('Work history added successfully');
+        toast.success("Work history added successfully");
       }
       fetchWorkHistory();
       setShowForm(false);
       setEditingHistory(null);
       setFormData({
         worker_id: workerId,
-        work_name: '',
-        work_type: '',
-        start_date: '',
-        end_date: '',
-        site_id: '',
-        organization_id: '',
+        work_name: "",
+        work_type: "",
+        start_date: "",
+        end_date: "",
+        site_id: "",
+        organization_id: "",
       });
     } catch (error) {
-      toast.error(editingHistory ? 'Failed to update work history' : 'Failed to add work history');
+      toast.error(editingHistory ? "Failed to update work history" : "Failed to add work history");
     }
   };
 
@@ -282,19 +283,19 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
       const detail = await getWorkHistoryDetail(workHistoryId);
       setSelectedWorkHistory(detail);
     } catch (error) {
-      toast.error('Failed to fetch work history details');
+      toast.error("Failed to fetch work history details");
     }
   };
 
   const handleDeleteWorkHistory = async (id: number) => {
-    if (!window.confirm('Are you sure you want to delete this work history?')) return;
-    
+    if (!window.confirm("Are you sure you want to delete this work history?")) return;
+
     try {
       await WorkHistoryAPI.deleteWorkHistory(id);
       fetchWorkHistory();
-      toast.success('Work history deleted successfully');
+      toast.success("Work history deleted successfully");
     } catch (error) {
-      toast.error('Failed to delete work history');
+      toast.error("Failed to delete work history");
     }
   };
 
@@ -313,16 +314,20 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
       
       if (response.data?.data) {
         // If we have data, update the workHistoryData with the new VC info
-        setWorkHistoryData(prev => prev ? {
-          ...prev,
-          over_all_vc_status: 'Issued',
-          over_all_work_credential: {
-            svg_url: response.data?.data?.svg_url || ''
-          }
-        } : null);
+        setWorkHistoryData((prev) =>
+          prev
+            ? {
+                ...prev,
+                over_all_vc_status: "Issued",
+                over_all_work_credential: {
+                  svg_url: response.data?.data?.svg_url || "",
+                },
+              }
+            : null,
+        );
       }
     } catch (error) {
-      console.error('Failed to check VC status:', error);
+      console.error("Failed to check VC status:", error);
     }
   };
 
@@ -330,14 +335,18 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
     try {
       setIsGeneratingVC(true);
       await WorkHistoryAPI.generateVC(workerId);
-      toast.success('VC generation initiated');
+      toast.success("VC generation initiated");
       // Update the status to pending after initiating generation
-      setWorkHistoryData(prev => prev ? {
-        ...prev,
-        over_all_vc_status: 'pending'
-      } : null);
+      setWorkHistoryData((prev) =>
+        prev
+          ? {
+              ...prev,
+              over_all_vc_status: "pending",
+            }
+          : null,
+      );
     } catch (error) {
-      toast.error('Failed to generate VC');
+      toast.error("Failed to generate VC");
     } finally {
       setIsGeneratingVC(false);
     }
@@ -345,7 +354,7 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
 
   const handlePreviewClick = () => {
     if (workHistoryData?.over_all_work_credential?.svg_url) {
-      window.open(workHistoryData.over_all_work_credential.svg_url, '_blank');
+      window.open(workHistoryData.over_all_work_credential.svg_url, "_blank");
     }
   };
 
@@ -355,7 +364,7 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
 
   const renderVCButton = () => {
     // If VC is already issued
-    if (workHistoryData?.over_all_vc_status === 'Issued' && workHistoryData?.over_all_work_credential?.svg_url) {
+    if (workHistoryData?.over_all_vc_status === "Issued" && workHistoryData?.over_all_work_credential?.svg_url) {
       return (
         <button
           onClick={handlePreviewClick}
@@ -368,7 +377,7 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
     }
 
     // If VC generation is in progress
-    if (isGeneratingVC || workHistoryData?.over_all_vc_status === 'pending') {
+    if (isGeneratingVC || workHistoryData?.over_all_vc_status === "pending") {
       return (
         <div className="flex items-center gap-2">
           <button
@@ -437,38 +446,35 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="border-b border-gray-200 bg-white">
-        <div className="py-4 px-6">
-          <button
-            onClick={onBack}
-            className="flex items-center text-gray-600 hover:text-gray-900"
-          >
+      <div className="border-b border-gray-200 bg-white sticky top-0 z-10">
+        <div className="py-4 px-4 sm:px-6">
+          <button onClick={onBack} className="flex items-center text-gray-600 hover:text-gray-900">
             <ArrowLeft className="h-5 w-5 mr-2" />
             Back to Workers
           </button>
         </div>
       </div>
 
-      <div className="py-6 px-6">
+      <div className="py-6 px-4 sm:px-6">
         <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">Worker Details</h1>
-            <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4 sm:mb-0">Worker Details</h1>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <button
                 onClick={() => {
-                  setEditingHistory(null);
+                  setEditingHistory(null)
                   setFormData({
                     worker_id: workerId,
-                    work_name: '',
-                    work_type: '',
-                    start_date: '',
-                    end_date: '',
-                    site_id: '',
-                    organization_id: '',
+                    work_name: "",
+                    work_type: "",
+                    start_date: "",
+                    end_date: "",
+                    site_id: "",
+                    organization_id: "",
                   });
                   setShowForm(true);
                 }}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2 w-full sm:w-auto justify-center"
               >
                 <Plus className="h-5 w-5" />
                 Add Work History
@@ -477,7 +483,7 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             {/* Worker Info */}
             <div className="bg-white p-6 rounded-lg shadow-sm">
               <div className="flex items-center gap-8">
@@ -524,32 +530,28 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
                   <div className="mt-2 grid grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm text-gray-500">Age</p>
-                      <p className="text-sm font-medium text-gray-900">{workHistoryData.age || '-'}</p>
+                      <p className="text-sm font-medium text-gray-900">{workHistoryData.age || "-"}</p>
                     </div>
                     <div>
                       <p className="text-sm text-gray-500">Gender</p>
-                      <p className="text-sm font-medium text-gray-900">{workHistoryData.sex || '-'}</p>
+                      <p className="text-sm font-medium text-gray-900">{workHistoryData.sex || "-"}</p>
                     </div>
                     <div className="col-span-2">
                       <p className="text-sm text-gray-500">Phone Number</p>
                       <div className="flex items-center gap-2">
                         <p className="text-sm font-medium text-gray-900">
-                          {workHistoryData.phone_number 
-                            ? (showPhoneNumber 
-                                ? workHistoryData.phone_number 
-                                : maskPhoneNumber(workHistoryData.phone_number))
-                            : '-'}
+                          {workHistoryData.phone_number
+                            ? showPhoneNumber
+                              ? workHistoryData.phone_number
+                              : maskPhoneNumber(workHistoryData.phone_number)
+                            : "-"}
                         </p>
                         {workHistoryData.phone_number && (
                           <button
                             onClick={() => setShowPhoneNumber(!showPhoneNumber)}
                             className="text-gray-400 hover:text-gray-600"
                           >
-                            {showPhoneNumber ? (
-                              <EyeOff className="h-4 w-4" />
-                            ) : (
-                              <Eye className="h-4 w-4" />
-                            )}
+                            {showPhoneNumber ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                           </button>
                         )}
                       </div>
@@ -566,25 +568,27 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
                 <div>
                   <p className="text-sm text-gray-500">Present Address</p>
                   <p className="text-sm font-medium text-gray-900">
-                    {workHistoryData && formatAddress({
-                      line1: workHistoryData.present_address_line1,
-                      line2: workHistoryData.present_address_line2,
-                      city: workHistoryData.present_city,
-                      state: workHistoryData.present_state,
-                      pincode: workHistoryData.present_pincode
-                    })}
+                    {workHistoryData &&
+                      formatAddress({
+                        line1: workHistoryData.present_address_line1,
+                        line2: workHistoryData.present_address_line2,
+                        city: workHistoryData.present_city,
+                        state: workHistoryData.present_state,
+                        pincode: workHistoryData.present_pincode,
+                      })}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Permanent Address</p>
                   <p className="text-sm font-medium text-gray-900">
-                    {workHistoryData && formatAddress({
-                      line1: workHistoryData.permanent_address_line1,
-                      line2: workHistoryData.permanent_address_line2,
-                      city: workHistoryData.permanent_city,
-                      state: workHistoryData.permanent_state,
-                      pincode: workHistoryData.permanent_pincode
-                    })}
+                    {workHistoryData &&
+                      formatAddress({
+                        line1: workHistoryData.permanent_address_line1,
+                        line2: workHistoryData.permanent_address_line2,
+                        city: workHistoryData.permanent_city,
+                        state: workHistoryData.permanent_state,
+                        pincode: workHistoryData.permanent_pincode,
+                      })}
                   </p>
                 </div>
               </div>
@@ -596,11 +600,15 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm text-gray-500">Total Working Days</p>
-                  <p className="text-2xl font-bold text-gray-900">{workHistoryData.total_number_of_working_days || 0}</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {workHistoryData.total_number_of_working_days || 0}
+                  </p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Approved Days</p>
-                  <p className="text-2xl font-bold text-green-600">{workHistoryData.total_no_of_approved_working_days || 0}</p>
+                  <p className="text-2xl font-bold text-green-600">
+                    {workHistoryData.total_no_of_approved_working_days || 0}
+                  </p>
                 </div>
               </div>
             </div>
@@ -615,75 +623,127 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Work Name</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Organization</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Site</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Start Date</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Working Days</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Approver</th>
-                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    <th
+                      scope="col"
+                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Work Details
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell"
+                    >
+                      Organization
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell"
+                    >
+                      Site
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell"
+                    >
+                      Start Date
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Working Days
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Status
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden xl:table-cell"
+                    >
+                      Approver
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                    >
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {workHistoryData.data?.map((history) => (
-                    <tr 
-                      key={history.id} 
+                    <tr
+                      key={history.id}
                       className="hover:bg-gray-50 cursor-pointer"
                       onClick={() => handleViewWorkHistoryDetail(history.id)}
                     >
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-4 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">{history.work_name}</div>
+                        <div className="text-xs text-gray-500 sm:hidden">{history.organization_name}</div>
+                        <div className="text-xs text-gray-500 lg:hidden">Site: {history.site_name}</div>
+                        <div className="text-xs text-gray-500 md:hidden">
+                          Start: {new Date(history.start_date).toLocaleDateString("en-GB")}
+                        </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-4 py-4 whitespace-nowrap hidden sm:table-cell">
                         <div className="text-sm font-medium text-gray-900">{history.organization_name}</div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-4 py-4 whitespace-nowrap hidden lg:table-cell">
                         <div className="text-sm font-medium text-gray-900">{history.site_name}</div>
-                      </td> 
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap hidden md:table-cell">
                         <div className="text-sm font-medium text-gray-900">
-                          {new Date(history.start_date).toLocaleDateString('en-GB')}
+                          {new Date(history.start_date).toLocaleDateString("en-GB")}
                         </div>
-                      </td>                     
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">{history.number_of_working_days}</div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-4 py-4 whitespace-nowrap">
                         <div className="flex flex-col gap-1">
-                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            history.status === 'approved'
-                              ? 'bg-green-100 text-green-800'
-                              : history.status === 'rejected'
-                              ? 'bg-red-100 text-red-800'
-                              : 'bg-yellow-100 text-yellow-800'
-                          }`}>
+                          <span
+                            className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                              history.status === "approved"
+                                ? "bg-green-100 text-green-800"
+                                : history.status === "rejected"
+                                  ? "bg-red-100 text-red-800"
+                                  : "bg-yellow-100 text-yellow-800"
+                            }`}
+                          >
                             {history.status}
                           </span>
-                          {history.approved_date && (
+                          {(history.approved_date || history.rejected_date) && (
                             <div className="text-xs text-gray-500 flex items-center">
                               <Clock className="h-3 w-3 mr-1" />
-                              {new Date(history.approved_date).toLocaleDateString('en-GB')}
+                              {history.approved_date
+                                ? new Date(history.approved_date).toLocaleDateString("en-GB")
+                                : history.rejected_date
+                                  ? new Date(history.rejected_date).toLocaleDateString("en-GB")
+                                  : "N/A"}
                             </div>
                           )}
-                          {history.rejected_date && (
-                            <div className="text-xs text-gray-500 flex items-center">
-                              <Clock className="h-3 w-3 mr-1" />
-                              {new Date(history.rejected_date).toLocaleDateString('en-GB')}
+                          {(history.approved_by || history.rejected_by) && (
+                            <div className="text-xs text-gray-500 xl:hidden">
+                              Approver: {history.approved_by || history.rejected_by || "NA"}
                             </div>
                           )}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{history.approved_by || history.rejected_by || 'NA'}</div>
+                      <td className="px-4 py-4 whitespace-nowrap hidden xl:table-cell">
+                        <div className="text-sm font-medium text-gray-900">
+                          {history.approved_by || history.rejected_by || "Pending"}
+                        </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        {history.status === 'pending' ? (
+                      <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        {history.status === "pending" ? (
                           <span className="flex items-center justify-end space-x-4">
                             <button
                               onClick={(e) => {
-                                e.stopPropagation();
-                                handleEdit(history);
+                                e.stopPropagation()
+                                handleEdit(history)
                               }}
                               className="text-blue-600 hover:text-blue-900"
                             >
@@ -691,8 +751,8 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
                             </button>
                             <button
                               onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteWorkHistory(history.id);
+                                e.stopPropagation()
+                                handleDeleteWorkHistory(history.id)
                               }}
                               className="text-red-600 hover:text-red-900"
                             >
@@ -700,24 +760,24 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
                             </button>
                           </span>
                         ) : (
-                        <span className="flex items-center justify-end">
-                          <span className="text-gray-500 mr-1">NA</span>
-                          <span className="relative group">
-                            <Info className="h-4 w-4 text-gray-400 hover:text-gray-600 transition-colors" />
-                            <div className="absolute right-0 bottom-full mb-2 hidden group-hover:block z-50">
-                              <div className="bg-gray-800 text-white text-xs rounded px-3 py-2 shadow-lg max-w-[calc(100vw-16px)] overflow-hidden">
-                                Edit and Delete actions are not allowed for approved / rejected work history.
+                          <span className="flex items-center justify-end">
+                            <span className="text-gray-500 mr-1">NA</span>
+                            <span className="relative group">
+                              <Info className="h-4 w-4 text-gray-400 hover:text-gray-600 transition-colors" />
+                              <div className="absolute right-0 bottom-full mb-2 hidden group-hover:block z-50">
+                                <div className="bg-gray-800 text-white text-xs rounded px-3 py-2 shadow-lg max-w-[calc(100vw-16px)] overflow-hidden">
+                                  Edit and Delete actions are not allowed for approved / rejected work history.
+                                </div>
                               </div>
-                            </div>
+                            </span>
                           </span>
-                        </span>
                         )}
                       </td>
                     </tr>
                   ))}
                   {!workHistoryData.data.length && (
                     <tr>
-                      <td colSpan={7} className="px-6 py-4 text-center text-gray-500">
+                      <td colSpan={8} className="px-4 py-4 text-center text-gray-500">
                         No work history found
                       </td>
                     </tr>
@@ -736,12 +796,12 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
           setEditingHistory(null);
           setFormData({
             worker_id: workerId,
-            work_name: '',
-            work_type: '',
-            start_date: '',
-            end_date: '',
-            site_id: '',
-            organization_id: '',
+            work_name: "",
+            work_type: "",
+            start_date: "",
+            end_date: "",
+            site_id: "",
+            organization_id: "",
           });
         }}
         formData={formData}
@@ -753,10 +813,7 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
       />
 
       {selectedWorkHistory && (
-        <WorkHistoryDetailModal
-          workHistory={selectedWorkHistory}
-          onClose={() => setSelectedWorkHistory(null)}
-        />
+        <WorkHistoryDetailModal workHistory={selectedWorkHistory} onClose={() => setSelectedWorkHistory(null)} />
       )}
 
       {showCamera && (
@@ -764,15 +821,11 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
           <div className="bg-white rounded-lg max-w-2xl w-full overflow-hidden">
             <div className="p-4 border-b border-gray-200 flex justify-between items-center">
               <h3 className="text-lg font-medium text-gray-900">Take Photo</h3>
-              <button
-                type="button"
-                onClick={stopCamera}
-                className="text-gray-400 hover:text-gray-500"
-              >
+              <button type="button" onClick={stopCamera} className="text-gray-400 hover:text-gray-500">
                 <X className="h-6 w-6" />
               </button>
             </div>
-            
+
             <div className="p-4">
               <div className="relative bg-black rounded-lg overflow-hidden">
                 <video
@@ -780,10 +833,10 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
                   autoPlay
                   playsInline
                   className="w-full h-auto"
-                  style={{ transform: 'scaleX(-1)' }}
+                  style={{ transform: "scaleX(-1)" }}
                 />
                 <canvas ref={photoRef} className="hidden" />
-                
+
                 <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
                   <button
                     type="button"
@@ -795,7 +848,7 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
                   </button>
                 </div>
               </div>
-              
+
               <p className="mt-2 text-sm text-gray-500 text-center">
                 Position yourself in the frame and click the capture button
               </p>
