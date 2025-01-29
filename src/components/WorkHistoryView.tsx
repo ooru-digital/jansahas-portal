@@ -16,6 +16,42 @@ interface WorkHistoryViewProps {
   onBack: () => void;
 }
 
+interface VCStatusResponse {
+  data: {
+    credential_id: string;
+    recipient_name: string;
+    updated_at: string;
+    svg_url: string;
+    thumbnail_url: string;
+    mobile_number: string;
+    whatsapp_number: string;
+    email_id: string;
+    status: string;
+    issuer_name: string;
+    approved_by: string | null;
+    certificate_name: string;
+    audit_log: {
+      log_category: string;
+      event_data: {
+        data: Record<string, any>;
+        info: string;
+        log_description: string;
+      };
+      severity: string;
+      error: null | string;
+    };
+    public_verify_url: string;
+    org_name: string;
+    org_linkedin_code: string | null;
+    org_linkedin_name: string | null;
+    org_code: string;
+    transaction_id: string;
+    verification_status: 'Valid' | 'Invalid' | 'Revoked' | 'Expired' | 'Failed';
+    org_logo: string;
+  } | null;
+  status: string;
+}
+
 const maskPhoneNumber = (phone: string) => {
   return phone.replace(/(\d{2})(\d{4})(\d{4})/, '$1****$3');
 };
@@ -271,15 +307,39 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
     setShowForm(true);
   };
 
+  const checkVCStatus = async () => {
+    try {
+      const response = await api.post<VCStatusResponse>(`/vc/${workerId}/status`);
+      
+      if (response.data?.data) {
+        // If we have data, update the workHistoryData with the new VC info
+        setWorkHistoryData(prev => prev ? {
+          ...prev,
+          over_all_vc_status: 'Issued',
+          over_all_work_credential: {
+            svg_url: response.data?.data?.svg_url || ''
+          }
+        } : null);
+      }
+    } catch (error) {
+      console.error('Failed to check VC status:', error);
+    }
+  };
+
   const handleGenerateVC = async () => {
     try {
       setIsGeneratingVC(true);
       await WorkHistoryAPI.generateVC(workerId);
       toast.success('VC generation initiated');
-      fetchWorkHistory();
+      // Update the status to pending after initiating generation
+      setWorkHistoryData(prev => prev ? {
+        ...prev,
+        over_all_vc_status: 'pending'
+      } : null);
     } catch (error) {
-      setIsGeneratingVC(false);
       toast.error('Failed to generate VC');
+    } finally {
+      setIsGeneratingVC(false);
     }
   };
 
@@ -287,6 +347,10 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
     if (workHistoryData?.over_all_work_credential?.svg_url) {
       window.open(workHistoryData.over_all_work_credential.svg_url, '_blank');
     }
+  };
+
+  const handleRefreshStatus = async () => {
+    await checkVCStatus();
   };
 
   const renderVCButton = () => {
@@ -315,7 +379,7 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
             Generate VC
           </button>
           <button
-            onClick={fetchWorkHistory}
+            onClick={handleRefreshStatus}
             className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
             title="Check status"
           >

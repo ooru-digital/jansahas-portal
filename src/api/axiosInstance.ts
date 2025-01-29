@@ -70,8 +70,28 @@ const getErrorMessage = (error: AxiosError): string => {
     if (typeof data === 'string') return data;
   }
 
-  // Fallback to axios error message or generic error
-  return error.message || 'An unexpected error occurred';
+  // Network error
+  if (!error.response) {
+    return 'Network error. Please check your connection.';
+  }
+
+  // Default error messages based on status code if no message found in response
+  switch (error.response.status) {
+    case 400:
+      return 'Invalid request. Please check your input.';
+    case 401:
+      return 'Authentication failed. Please login again.';
+    case 403:
+      return 'You do not have permission to perform this action.';
+    case 404:
+      return 'The requested resource was not found.';
+    case 422:
+      return 'Validation error. Please check your input.';
+    case 500:
+      return 'Server error. Please try again later.';
+    default:
+      return error.message || 'An unexpected error occurred';
+  }
 };
 
 // Add a request interceptor
@@ -103,14 +123,8 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // Handle network errors
-    if (!error.response) {
-      toast.error('Network error. Please check your connection.');
-      return Promise.reject(error);
-    }
-
     // If the error status is 401 and there hasn't been a retry yet
-    if (error.response.status === 401 && !originalRequest._retry) {
+    if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
         // If token refresh is in progress, add request to queue
         try {
@@ -156,28 +170,9 @@ api.interceptors.response.use(
       }
     }
 
-    // Handle specific HTTP status codes
-    switch (error.response.status) {
-      case 400:
-        toast.error('Invalid request. Please check your input.');
-        break;
-      case 403:
-        toast.error('You do not have permission to perform this action.');
-        break;
-      case 404:
-        toast.error('The requested resource was not found.');
-        break;
-      case 422:
-        toast.error('Validation error. Please check your input.');
-        break;
-      case 500:
-        toast.error('Server error. Please try again later.');
-        break;
-      default:
-        // For all other errors, use the error message from the response
-        toast.error(getErrorMessage(error));
-    }
-
+    // Show error message from API response or fallback to default
+    const errorMessage = getErrorMessage(error);
+    toast.error(errorMessage);
     return Promise.reject(error);
   }
 );
