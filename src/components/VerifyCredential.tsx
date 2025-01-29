@@ -146,7 +146,7 @@ export default function VerifyCredential() {
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="py-4 flex items-center justify-center">
-            <h1 className="text-2xl font-bold text-gray-900">90 Days Employment Certificate</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">90 Days Employment Certificate</h1>
           </div>
         </div>
       </div>
@@ -336,6 +336,7 @@ export default function VerifyCredential() {
             {/* Mobile View */}
             <div className="md:hidden">
               <div className="flex items-center justify-between mb-4">
+                {/* Previous Button */}
                 <button
                   onClick={handlePrevious}
                   disabled={currentIndex === 0}
@@ -347,44 +348,54 @@ export default function VerifyCredential() {
                 >
                   <ChevronLeft className="h-6 w-6" />
                 </button>
-                <div className="flex-1 flex justify-center">
+
+                {/* Certificate Preview */}
+                <div className="flex-1 flex flex-col items-center">
                   {data.related_vc_data[currentIndex] && (
-                    <button
-                      onClick={() => setShowPreview(data.related_vc_data[currentIndex].svg_url)}
-                      className="relative w-full max-w-[300px] h-[400px] bg-gray-100 border border-gray-400 rounded-lg shadow-sm hover:shadow-md transition-all overflow-hidden"
-                    >
-                      {/* Certificate Preview */}
-                      <iframe
-                        src={data.related_vc_data[currentIndex].svg_url}
-                        className="w-full h-full pointer-events-none"
-                        title={`${data.related_vc_data[currentIndex].org_name} Certificate Preview`}
-                      />
-                      
-                      {/* Always Visible Overlay */}
-                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-50">
-                        {data.related_vc_data[currentIndex].org_logo ? (
-                          <div className="w-24 h-24 rounded-full border-4 border-white shadow-lg p-3 bg-white mb-4">
-                            <img
-                              src={data.related_vc_data[currentIndex].org_logo}
-                              alt={data.related_vc_data[currentIndex].org_name}
-                              className="w-full h-full object-contain"
-                            />
-                          </div>
-                        ) : (
-                          <div className="w-24 h-24 rounded-full border-4 border-white shadow-lg p-3 bg-white mb-4 flex items-center justify-center">
-                            <Building2 className="w-12 h-12 text-gray-400" />
-                          </div>
-                        )}
-                        <p className="text-lg font-medium text-white text-center">
-                          {data.related_vc_data[currentIndex].org_name}
-                        </p>
-                        <p className="text-sm text-gray-200 mt-2">
-                          Tap to view certificate
-                        </p>
-                      </div>
-                    </button>
+                    <>
+                      <button
+                        onClick={() => setShowPreview(data.related_vc_data[currentIndex].svg_url)}
+                        className="relative w-full max-w-[300px] h-[400px] bg-gray-100 border border-gray-400 rounded-lg shadow-sm hover:shadow-md transition-all overflow-hidden"
+                      >
+                        <iframe
+                          src={data.related_vc_data[currentIndex].svg_url}
+                          className="w-full h-full pointer-events-none"
+                          title={`${data.related_vc_data[currentIndex].org_name} Certificate Preview`}
+                        />
+                        
+                        {/* Always Visible Overlay */}
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-50">
+                          {data.related_vc_data[currentIndex].org_logo ? (
+                            <div className="w-24 h-24 rounded-full border-4 border-white shadow-lg p-3 bg-white mb-4">
+                              <img
+                                src={data.related_vc_data[currentIndex].org_logo}
+                                alt={data.related_vc_data[currentIndex].org_name}
+                                className="w-full h-full object-contain"
+                              />
+                            </div>
+                          ) : (
+                            <div className="w-24 h-24 rounded-full border-4 border-white shadow-lg p-3 bg-white mb-4 flex items-center justify-center">
+                              <Building2 className="w-12 h-12 text-gray-400" />
+                            </div>
+                          )}
+                          <p className="text-lg font-medium text-white text-center">
+                            {data.related_vc_data[currentIndex].org_name}
+                          </p>
+                          <p className="text-sm text-gray-200 mt-2">
+                            Tap to view certificate
+                          </p>
+                        </div>
+                      </button>
+
+                      {/* Pagination Count Display */}
+                      <p className="mt-2 text-sm text-gray-600">
+                        {currentIndex + 1} of {data.related_vc_data.length}
+                      </p>
+                    </>
                   )}
                 </div>
+
+                {/* Next Button */}
                 <button
                   onClick={handleNext}
                   disabled={currentIndex >= data.related_vc_data.length - 1}
