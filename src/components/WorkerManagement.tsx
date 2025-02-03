@@ -41,6 +41,7 @@ export default function WorkerManagement() {
           vcStatus: "",
         };
   });
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     searchTermRef.current = searchTerm;
@@ -66,36 +67,33 @@ export default function WorkerManagement() {
     sessionStorage.setItem("workersSearchTerm", searchTerm);
   }, [searchTerm]);
 
-  const buildQueryParams = useCallback(
-    (pageOffset = 0): WorkersQueryParams => {
-      const params: WorkersQueryParams = {
-        limit: 10,
-        offset: pageOffset,
-      }
+  const buildQueryParams = useCallback((pageOffset = 0, currentFilters = filters): WorkersQueryParams => {
+    const params: WorkersQueryParams = {
+      limit: 10,
+      offset: pageOffset,
+    }
 
-      if (searchTermRef.current.trim()) {
-        params.search = searchTermRef.current.trim();
-      }
+    if (searchTermRef.current.trim()) {
+      params.search = searchTermRef.current.trim();
+    }
 
-      if (filters.gender) {
-        params.gender = filters.gender as "male" | "female";
-      }
+    if (currentFilters.gender) {
+      params.gender = currentFilters.gender as "male" | "female";
+    }
 
-      if (filters.approvedDays) {
-        params.approved_worker_days = filters.approvedDays as "lt_90" | "gt_90";
-      }
+    if (currentFilters.approvedDays) {
+      params.approved_worker_days = currentFilters.approvedDays as "lt_90" | "gt_90";
+    }
 
-      if (filters.vcStatus) {
-        params.vc_generated = filters.vcStatus === "generated";
-      }
+    if (currentFilters.vcStatus) {
+      params.vc_generated = currentFilters.vcStatus === "generated";
+    }
 
-      return params;
-    },
-    [filters],
-  );
+    return params;
+  }, []);
 
   const fetchWorkers = useCallback(
-    async (pageOffset?: number, isSearching = false) => {
+    async (page = 1, isSearching = false) => {
       try {
         if (isSearching) {
           setTableLoading(true);
@@ -103,9 +101,10 @@ export default function WorkerManagement() {
           setLoading(true);
         }
 
-        const params = buildQueryParams(pageOffset);
+        const params = buildQueryParams((page - 1) * 10, filters);
         const data = await WorkerAPI.getWorkers(params);
         setWorkersData(data);
+        setCurrentPage(page);
       } catch (error) {
         toast.error("Failed to fetch workers");
       } finally {
@@ -113,12 +112,12 @@ export default function WorkerManagement() {
         setTableLoading(false);
       }
     },
-    [buildQueryParams],
+    [buildQueryParams, filters],
   );
 
   const debouncedFetch = useCallback(
     debounce(() => {
-      fetchWorkers(0, true);
+      fetchWorkers(1, true);
     }, 300),
     [fetchWorkers],
   );
@@ -139,29 +138,11 @@ export default function WorkerManagement() {
     };
     setFilters(newFilters);
 
+    setCurrentPage(1);
+    setTableLoading(true);
+
     try {
-      setTableLoading(true);
-      const params: WorkersQueryParams = {
-        limit: 10,
-        offset: 0,
-      };
-
-      if (searchTerm.trim()) {
-        params.search = searchTerm.trim();
-      }
-
-      if (newFilters.gender) {
-        params.gender = newFilters.gender as "male" | "female";
-      }
-
-      if (newFilters.approvedDays) {
-        params.approved_worker_days = newFilters.approvedDays as "lt_90" | "gt_90";
-      }
-
-      if (newFilters.vcStatus) {
-        params.vc_generated = newFilters.vcStatus === "generated";
-      }
-
+      const params = buildQueryParams(0, newFilters);
       const data = await WorkerAPI.getWorkers(params);
       setWorkersData(data);
     } catch (error) {
@@ -181,6 +162,7 @@ export default function WorkerManagement() {
       approvedDays: "",
       vcStatus: "",
     });
+    setCurrentPage(1)
 
     try {
       setTableLoading(true);
@@ -241,7 +223,8 @@ export default function WorkerManagement() {
     try {
       const urlObj = new URL(url);
       const offset = Number.parseInt(urlObj.searchParams.get("offset") || "0");
-      fetchWorkers(offset, true);
+      const page = Math.floor(offset / 10) + 1;
+      fetchWorkers(page, true);
     } catch (error) {
       toast.error("Failed to fetch workers");
     }
@@ -423,7 +406,7 @@ export default function WorkerManagement() {
                             <div className="text-sm text-gray-500">{worker.total_approved_work_days || 0}</div>
                           </td>
                           <td className="px-4 py-3">
-                            <div className="text-sm text-gray-500">{worker.created_by || 'NA'}</div>
+                            <div className="text-sm text-gray-500">{worker.created_by || "NA"}</div>
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex items-center justify-center space-x-3">
@@ -487,9 +470,7 @@ export default function WorkerManagement() {
                                 <p className="text-xs text-gray-500">
                                   {worker.gender}, {worker.age} yrs | Days: {worker.total_approved_work_days || 0}
                                 </p>
-                                <p className="text-xs text-gray-500 mt-1">
-                                  Created by: {worker.created_by || 'NA'}
-                                </p>
+                                <p className="text-xs text-gray-500 mt-1">Created by: {worker.created_by || "NA"}</p>
                               </div>
                               <div className="flex space-x-2">
                                 <button
@@ -575,9 +556,12 @@ export default function WorkerManagement() {
                     <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                       <div>
                         <p className="text-sm text-gray-700">
-                          Showing <span className="font-medium">1</span> to{" "}
-                          <span className="font-medium">{workersData.results.length}</span> of{" "}
-                          <span className="font-medium">{workersData.count}</span> results
+                          Showing{" "}
+                          <span className="font-medium">
+                            {workersData.results.length > 0 ? (currentPage - 1) * 10 + 1 : 0}
+                          </span>{" "}
+                          to <span className="font-medium">{(currentPage - 1) * 10 + workersData.results.length}</span>{" "}
+                          of <span className="font-medium">{workersData.count}</span> results
                         </p>
                       </div>
                       <div>
