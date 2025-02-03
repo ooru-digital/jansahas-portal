@@ -357,48 +357,14 @@ export default function WorkerManagement() {
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th
-                          scope="col"
-                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          Photo
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          Name
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          Age
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          Gender
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          Phone Number
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          Approved Days
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
-                        >
-                          Actions
-                        </th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Photo</th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Age</th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gender</th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone Number</th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Approved Days</th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created By</th>
+                        <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
@@ -455,6 +421,9 @@ export default function WorkerManagement() {
                           </td>
                           <td className="px-4 py-3">
                             <div className="text-sm text-gray-500">{worker.total_approved_work_days || 0}</div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="text-sm text-gray-500">{worker.created_by || 'NA'}</div>
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex items-center justify-center space-x-3">
@@ -517,6 +486,9 @@ export default function WorkerManagement() {
                                 <p className="text-sm font-medium text-gray-900 truncate">{worker.name}</p>
                                 <p className="text-xs text-gray-500">
                                   {worker.gender}, {worker.age} yrs | Days: {worker.total_approved_work_days || 0}
+                                </p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  Created by: {worker.created_by || 'NA'}
                                 </p>
                               </div>
                               <div className="flex space-x-2">

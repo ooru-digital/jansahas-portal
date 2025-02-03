@@ -1,9 +1,14 @@
-import { X, User, MapPin, Briefcase, Clock } from 'lucide-react';
+import { X, User, MapPin, Briefcase, Clock, Check, XCircle } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import type { WorkHistoryDetail } from '../api/dashboard';
+import { bulkUpdateApprovalStatus } from '../api/dashboard';
 
 interface WorkHistoryDetailModalProps {
   workHistory: WorkHistoryDetail;
   onClose: () => void;
+  isFromApprovals?: boolean;
+  isJansathi?: boolean;
+  onStatusUpdate?: () => void;
 }
 
 const formatAddress = (addressFields: {
@@ -24,7 +29,13 @@ const formatAddress = (addressFields: {
   return parts.join(', ');
 };
 
-export default function WorkHistoryDetailModal({ workHistory, onClose }: WorkHistoryDetailModalProps) {
+export default function WorkHistoryDetailModal({ 
+  workHistory, 
+  onClose,
+  isFromApprovals = false,
+  isJansathi = false,
+  onStatusUpdate
+}: WorkHistoryDetailModalProps) {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-GB');
   };
@@ -39,6 +50,17 @@ export default function WorkHistoryDetailModal({ workHistory, onClose }: WorkHis
         return 'bg-yellow-100 text-yellow-800';
       default:
         return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const handleApprovalAction = async (status: 'approved' | 'rejected') => {
+    try {
+      await bulkUpdateApprovalStatus([{ id: workHistory.id, status }]);
+      toast.success(`Work history ${status} successfully`);
+      onStatusUpdate?.();
+      onClose();
+    } catch (error) {
+      toast.error(`Failed to ${status} work history`);
     }
   };
 
@@ -65,7 +87,7 @@ export default function WorkHistoryDetailModal({ workHistory, onClose }: WorkHis
               <div className="flex-shrink-0 flex items-center justify-center">
                 {workHistory.photograph ? (
                   <img
-                    src={workHistory.photograph || "/placeholder.svg"}
+                    src={workHistory.photograph}
                     alt={workHistory.worker_name}
                     className="w-24 h-24 sm:w-32 sm:h-32 rounded-lg object-cover"
                   />
@@ -222,6 +244,26 @@ export default function WorkHistoryDetailModal({ workHistory, onClose }: WorkHis
             </div>
           </div>
         </div>
+
+        {/* Footer with action buttons */}
+        {isFromApprovals && !isJansathi && workHistory.status === 'pending' && (
+          <div className="flex justify-end gap-4 p-6 border-t mt-auto">
+            <button
+              onClick={() => handleApprovalAction('rejected')}
+              className="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 flex items-center gap-2"
+            >
+              <XCircle className="h-5 w-5" />
+              Reject
+            </button>
+            <button
+              onClick={() => handleApprovalAction('approved')}
+              className="px-4 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700 flex items-center gap-2"
+            >
+              <Check className="h-5 w-5" />
+              Approve
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -19,6 +19,7 @@ export interface Worker {
   gender: string;
   photograph: string | null;
   total_approved_work_days?: number;
+  created_by?: string | null;
 }
 
 export interface CreateWorkerData {
@@ -76,6 +77,7 @@ interface ApiWorkerResponse {
   age: number;
   sex: string;
   photograph: string | null;
+  created_by?: string | null;
 }
 
 export interface WorkersResponse {

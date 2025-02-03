@@ -227,7 +227,7 @@ export default function Approvals() {
 
           <div className="bg-white rounded-xl shadow-sm">
             <div className="p-4 md:p-6 border-b border-gray-200">
-              <div className="relative w-full max-w-xs mx-auto sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl">
+              <div className="relative w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl">
                 <input
                   type="text"
                   placeholder="Search approvals..."
@@ -585,7 +585,13 @@ export default function Approvals() {
       </div>
 
       {selectedWorkHistory && (
-        <WorkHistoryDetailModal workHistory={selectedWorkHistory} onClose={() => setSelectedWorkHistory(null)} />
+        <WorkHistoryDetailModal
+          workHistory={selectedWorkHistory}
+          onClose={() => setSelectedWorkHistory(null)}
+          isFromApprovals={true}
+          isJansathi={isJansathi}
+          onStatusUpdate={fetchApprovals}
+        />
       )}
     </>
   );
