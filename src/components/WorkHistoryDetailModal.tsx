@@ -133,7 +133,7 @@ export default function WorkHistoryDetailModal({ workHistory, onClose }: WorkHis
               </h3>
               <div className="space-y-3">
                 <div>
-                  <p className="text-xs sm:text-sm text-gray-500">Work Name</p>
+                  <p className="text-xs sm:text-sm text-gray-500">Nature of Work</p>
                   <p className="text-sm sm:text-base font-medium">{workHistory.work_name}</p>
                 </div>
                 <div>

@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Building2, Users, UserRound, CheckSquare, Clock, XCircle, X } from 'lucide-react';
+import { Building2, UserRound, CheckSquare, Clock, XCircle, X, Plus } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { getDashboardCounts, getRecentWorkDetails, getWorkHistoryDetail, DashboardCounts, WorkDetail, WorkHistoryDetail } from '../api/dashboard';
 import { getAllSites, Site } from '../api/sites';
-import { getOrganizations, Organization } from '../api/organizations';
 import WorkHistoryDetailModal from './WorkHistoryDetailModal';
 
-type ActiveView = "dashboard" | "workers" | "approvals";
+type ActiveView = "dashboard" | "workers" | "approvals" | "workers/add-worker";
 
 interface DashboardProps {
   onNavigate: (view: ActiveView) => void;
@@ -16,8 +15,8 @@ interface ListModalProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
-  type: 'sites' | 'organizations';
-  items: Array<Site | Organization>;
+  type: 'sites';
+  items: Array<Site>;
 }
 
 const WorkList = ({
@@ -178,39 +177,25 @@ const ListModal: React.FC<ListModalProps> = ({ isOpen, onClose, title, type, ite
               <tbody className="bg-white divide-y divide-gray-200">
                 {items.map((item) => (
                   <tr key={item.id} className="hover:bg-gray-50">
-                    {type === "sites" ? (
-                      <>
-                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {(item as Site).name}
-                        </td>
-                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {(item as Site).organization_name}
-                        </td>
-                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {(item as Site).location}
-                        </td>
-                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {formatDate((item as Site).created_at)}
-                        </td>
-                      </>
-                    ) : (
-                      <>
-                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {(item as Organization).name}
-                        </td>
-                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {(item as Organization).location || "N/A"}
-                        </td>
-                        <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {formatDate((item as Organization).created_at)}
-                        </td>
-                      </>
-                    )}
+                    <>
+                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {(item as Site).name}
+                      </td>
+                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {(item as Site).organization_name}
+                      </td>
+                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {(item as Site).location}
+                      </td>
+                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {formatDate((item as Site).created_at)}
+                      </td>
+                    </>
                   </tr>
                 ))}
                 {items.length === 0 && (
                   <tr>
-                    <td colSpan={type === "sites" ? 4 : 3} className="px-3 sm:px-6 py-4 text-center text-gray-500">
+                    <td colSpan={4} className="px-3 sm:px-6 py-4 text-center text-gray-500">
                       No items found
                     </td>
                   </tr>
@@ -233,9 +218,7 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
   const [error, setError] = useState<string | null>(null);
   const [selectedWorkHistory, setSelectedWorkHistory] = useState<WorkHistoryDetail | null>(null);
   const [showSitesModal, setShowSitesModal] = useState(false);
-  const [showOrganizationsModal, setShowOrganizationsModal] = useState(false);
   const [sites, setSites] = useState<Site[]>([]);
-  const [organizations, setOrganizations] = useState<Organization[]>([]);
 
   useEffect(() => {
     fetchDashboardData();
@@ -272,16 +255,6 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
       setShowSitesModal(true);
     } catch (error) {
       toast.error("Failed to fetch sites");
-    }
-  };
-
-  const handleOrganizationsClick = async () => {
-    try {
-      const data = await getOrganizations();
-      setOrganizations(data);
-      setShowOrganizationsModal(true);
-    } catch (error) {
-      toast.error("Failed to fetch organizations");
     }
   };
 
@@ -323,7 +296,16 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
     <>
       <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6 sm:mb-8">Dashboard</h1>
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Dashboard</h1>
+            <button
+              onClick={() => onNavigate('workers/add-worker')}
+              className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700"
+            >
+              <Plus className="h-5 w-5 mr-2" />
+              Add Worker
+            </button>
+          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
             <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
@@ -361,19 +343,6 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
             )}
 
             <button
-              onClick={handleOrganizationsClick}
-              className="bg-white rounded-xl shadow-sm p-4 sm:p-6 hover:bg-gray-50 transition-colors duration-200"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-600">Total Organizations</p>
-                  <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">{counts?.total_organizations || 0}</p>
-                </div>
-                <Building2 className="h-8 w-8 sm:h-10 sm:w-10 text-orange-600 flex-shrink-0" />
-              </div>
-            </button>
-
-            <button
               onClick={handleSitesClick}
               className="bg-white rounded-xl shadow-sm p-4 sm:p-6 hover:bg-gray-50 transition-colors duration-200"
             >
@@ -385,18 +354,6 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
                 <Building2 className="h-8 w-8 sm:h-10 sm:w-10 text-blue-600 flex-shrink-0" />
               </div>
             </button>
-
-            <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex-1 text-center">
-                  <p className="text-sm font-medium text-gray-600">Authorized Signatories</p>
-                  <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-1">
-                    {counts?.total_authorized_signatories || 0}
-                  </p>
-                </div>
-                <Users className="h-8 w-8 sm:h-10 sm:w-10 text-purple-600 flex-shrink-0" />
-              </div>
-            </div>
 
             <button
               onClick={() => onNavigate("workers")}
@@ -442,14 +399,6 @@ export default function Dashboard({ onNavigate }: DashboardProps) {
             title="All Sites"
             type="sites"
             items={sites}
-          />
-
-          <ListModal
-            isOpen={showOrganizationsModal}
-            onClose={() => setShowOrganizationsModal(false)}
-            title="All Organizations"
-            type="organizations"
-            items={organizations}
           />
 
           {selectedWorkHistory && (

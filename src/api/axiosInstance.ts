@@ -34,6 +34,12 @@ const processQueue = (error: Error | null, token: string | null = null) => {
   failedQueue = [];
 };
 
+const handleLogout = () => {
+  localStorage.removeItem('tokens');
+  localStorage.removeItem('userInfo');
+  window.location.href = '/';
+};
+
 // Helper function to extract error message from response
 const getErrorMessage = (error: AxiosError): string => {
   if (error.response?.data) {
@@ -123,19 +129,25 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
+    // Check if it's a refresh token request that failed
+    if (originalRequest.url === '/token/refresh/' && error.response?.status === 401) {
+      handleLogout();
+      return Promise.reject(error);
+    }
+
     // If the error status is 401 and there hasn't been a retry yet
     if (error.response?.status === 401 && !originalRequest._retry) {
       if (isRefreshing) {
         // If token refresh is in progress, add request to queue
         try {
+          // Wait for the token refresh to complete
           const token = await new Promise((resolve, reject) => {
             failedQueue.push({ resolve, reject });
           });
           originalRequest.headers.Authorization = `Bearer ${token}`;
           return api(originalRequest);
         } catch (err) {
-          const errorMessage = getErrorMessage(err as AxiosError);
-          toast.error(errorMessage);
+          handleLogout();
           return Promise.reject(err);
         }
       }
@@ -154,23 +166,28 @@ api.interceptors.response.use(
         const newTokens = response;
         
         localStorage.setItem('tokens', JSON.stringify(newTokens));
+        
+        // Update axios default headers
         api.defaults.headers.common['Authorization'] = `Bearer ${newTokens.access}`;
+        
+        // Update the original request headers
         originalRequest.headers.Authorization = `Bearer ${newTokens.access}`;
         
+        // Process all queued requests
         processQueue(null, newTokens.access);
         
+        // Retry the original request
         return api(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError as Error, null);
-        localStorage.removeItem('tokens');
-        window.location.href = '/';
+        handleLogout();
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
       }
     }
 
-    // Show error message from API response or fallback to default
+    // For all other errors, show error message
     const errorMessage = getErrorMessage(error);
     toast.error(errorMessage);
     return Promise.reject(error);

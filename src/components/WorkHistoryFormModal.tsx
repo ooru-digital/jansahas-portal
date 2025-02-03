@@ -155,7 +155,7 @@ export default function WorkHistoryFormModal({
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Work Name <span className="text-red-500">*</span>
+                  Nature of Work <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"

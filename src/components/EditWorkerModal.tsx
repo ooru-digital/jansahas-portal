@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import * as WorkerAPI from '../api/workers';
@@ -10,6 +10,8 @@ interface EditWorkerModalProps {
   onClose: () => void;
   onWorkerUpdated: () => void;
 }
+
+type FormFields = keyof Omit<UpdateWorkerData, 'age'> | 'age';
 
 type FormData = {
   name: string;
@@ -45,27 +47,79 @@ export default function EditWorkerModal({ worker, isOpen, onClose, onWorkerUpdat
     permanent_pincode: worker.permanent_pincode,
     age: worker.age.toString(),
     gender: worker.gender.charAt(0).toUpperCase() + worker.gender.slice(1).toLowerCase(),
-    organization_id: worker.organization_id
+    organization_id: worker.organization_id,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [copyAddress, setCopyAddress] = useState(false);
+
+  useEffect(() => {
+    if (copyAddress) {
+      setFormData((prev) => ({
+        ...prev,
+        permanent_address_line1: prev.present_address_line1,
+        permanent_address_line2: prev.present_address_line2,
+        permanent_city: prev.present_city,
+        permanent_state: prev.present_state,
+        permanent_pincode: prev.present_pincode,
+      }))
+    }
+  }, [
+    copyAddress,
+    formData.present_address_line1,
+    formData.present_address_line2,
+    formData.present_city,
+    formData.present_state,
+    formData.present_pincode,
+  ]);
+
+  useEffect(() => {
+    const addressFieldsMatch = ["address_line1", "address_line2", "city", "state", "pincode"].every(
+      (field) => formData[`present_${field}` as keyof FormData] === formData[`permanent_${field}` as keyof FormData],
+    )
+
+    setCopyAddress(addressFieldsMatch)
+  }, [formData]);
 
   if (!isOpen) return null;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    
+
     // Apply character limits for address fields
-    if (name.includes('line1') || name.includes('line2') || name.includes('city')) {
+    if (name.includes("line1") || name.includes("line2") || name.includes("city")) {
       if (value.length > 30) return;
     }
-    if (name.includes('state')) {
+    if (name.includes("state")) {
       if (value.length > 17) return;
     }
-    
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+
+    setFormData((prev) => {
+      const newData = {
+        ...prev,
+        [name as FormFields]: value,
+      }
+
+      if (copyAddress && name.startsWith("present_")) {
+        const permanentField = name.replace("present_", "permanent_") as FormFields
+        newData[permanentField] = value
+      }
+
+      return newData
+    })
+  }
+
+  const handleCopyAddress = (checked: boolean) => {
+    setCopyAddress(checked)
+    if (checked) {
+      setFormData((prev) => ({
+        ...prev,
+        permanent_address_line1: prev.present_address_line1,
+        permanent_address_line2: prev.present_address_line2,
+        permanent_city: prev.present_city,
+        permanent_state: prev.present_state,
+        permanent_pincode: prev.present_pincode,
+      }))
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -82,13 +136,13 @@ export default function EditWorkerModal({ worker, isOpen, onClose, onWorkerUpdat
       const workerValue = worker[workerKey];
 
       if (value !== workerValue?.toString()) {
-        if (key === 'age') {
-          const ageNum = parseInt(value, 10);
+        if (key === "age") {
+          const ageNum = Number.parseInt(value, 10);
           if (isNaN(ageNum) || ageNum < 18 || ageNum > 60) {
-            throw new Error('Please enter a valid age between 18 and 60');
+            throw new Error("Please enter a valid age between 18 and 60");
           }
           modifiedFields.age = ageNum;
-        } else if (key === 'gender') {
+        } else if (key === "gender") {
           // Only add gender if it's different from the original value
           if (value !== worker.gender) {
             modifiedFields.gender = value;
@@ -96,7 +150,7 @@ export default function EditWorkerModal({ worker, isOpen, onClose, onWorkerUpdat
         } else {
           // For all other fields, only add them if they're different
           const typedKey = key as keyof UpdateWorkerData;
-          if (typedKey !== 'gender' && typedKey !== 'age') {
+          if (typedKey !== "gender" && typedKey !== "age") {
             modifiedFields[typedKey] = value;
           }
         }
@@ -105,7 +159,7 @@ export default function EditWorkerModal({ worker, isOpen, onClose, onWorkerUpdat
 
     // If no fields were modified, show a message and return
     if (Object.keys(modifiedFields).length === 0) {
-      toast.error('No changes were made');
+      toast.error("No changes were made");
       return;
     }
 
@@ -115,7 +169,7 @@ export default function EditWorkerModal({ worker, isOpen, onClose, onWorkerUpdat
       const permanentPincodeValid = /^[0-9]{6}$/.test(formData.permanent_pincode);
 
       if (!presentPincodeValid || !permanentPincodeValid) {
-        toast.error('Please enter valid 6-digit pincodes');
+        toast.error("Please enter valid 6-digit pincodes");
         return;
       }
     }
@@ -123,11 +177,11 @@ export default function EditWorkerModal({ worker, isOpen, onClose, onWorkerUpdat
     try {
       setIsSubmitting(true);
       await WorkerAPI.updateWorker(worker.id, modifiedFields);
-      toast.success('Worker updated successfully');
+      toast.success("Worker updated successfully");
       onWorkerUpdated();
       onClose();
     } catch (error) {
-      console.error('Update failed:', error);
+      console.error("Update failed:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -138,11 +192,7 @@ export default function EditWorkerModal({ worker, isOpen, onClose, onWorkerUpdat
       <div className="bg-white rounded-lg w-full max-w-3xl max-h-[90vh] flex flex-col">
         <div className="flex justify-between items-center p-6 border-b">
           <h3 className="text-lg font-medium text-gray-900">Edit Worker</h3>
-          <button 
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
-            type="button"
-          >
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700" type="button">
             <X className="h-6 w-6" />
           </button>
         </div>
@@ -151,9 +201,7 @@ export default function EditWorkerModal({ worker, isOpen, onClose, onWorkerUpdat
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Full Name
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
                 <input
                   type="text"
                   name="name"
@@ -197,9 +245,7 @@ export default function EditWorkerModal({ worker, isOpen, onClose, onWorkerUpdat
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Phone Number
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
                 <input
                   type="tel"
                   name="phone_number"
@@ -294,7 +340,18 @@ export default function EditWorkerModal({ worker, isOpen, onClose, onWorkerUpdat
 
             {/* Permanent Address Fields */}
             <div>
-              <h4 className="text-sm font-medium text-gray-900 mb-2">Permanent Address</h4>
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-sm font-medium text-gray-900">Permanent Address</h4>
+                <label className="flex items-center gap-2 text-sm text-gray-600">
+                  <input
+                    type="checkbox"
+                    checked={copyAddress}
+                    onChange={(e) => handleCopyAddress(e.target.checked)}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  Same as Present Address
+                </label>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -306,8 +363,11 @@ export default function EditWorkerModal({ worker, isOpen, onClose, onWorkerUpdat
                     value={formData.permanent_address_line1}
                     onChange={handleInputChange}
                     maxLength={30}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      copyAddress ? "bg-gray-100 cursor-not-allowed" : ""
+                    }`}
                     required
+                    disabled={copyAddress}
                   />
                   <p className="mt-1 text-xs text-gray-500">{formData.permanent_address_line1.length}/30 characters</p>
                 </div>
@@ -321,8 +381,11 @@ export default function EditWorkerModal({ worker, isOpen, onClose, onWorkerUpdat
                     value={formData.permanent_address_line2}
                     onChange={handleInputChange}
                     maxLength={30}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      copyAddress ? "bg-gray-100 cursor-not-allowed" : ""
+                    }`}
                     required
+                    disabled={copyAddress}
                   />
                   <p className="mt-1 text-xs text-gray-500">{formData.permanent_address_line2.length}/30 characters</p>
                 </div>
@@ -336,8 +399,11 @@ export default function EditWorkerModal({ worker, isOpen, onClose, onWorkerUpdat
                     value={formData.permanent_city}
                     onChange={handleInputChange}
                     maxLength={30}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      copyAddress ? "bg-gray-100 cursor-not-allowed" : ""
+                    }`}
                     required
+                    disabled={copyAddress}
                   />
                   <p className="mt-1 text-xs text-gray-500">{formData.permanent_city.length}/30 characters</p>
                 </div>
@@ -351,8 +417,11 @@ export default function EditWorkerModal({ worker, isOpen, onClose, onWorkerUpdat
                     value={formData.permanent_state}
                     onChange={handleInputChange}
                     maxLength={17}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      copyAddress ? "bg-gray-100 cursor-not-allowed" : ""
+                    }`}
                     required
+                    disabled={copyAddress}
                   />
                   <p className="mt-1 text-xs text-gray-500">{formData.permanent_state.length}/17 characters</p>
                 </div>
@@ -367,8 +436,11 @@ export default function EditWorkerModal({ worker, isOpen, onClose, onWorkerUpdat
                     onChange={handleInputChange}
                     pattern="[0-9]{6}"
                     maxLength={6}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      copyAddress ? "bg-gray-100 cursor-not-allowed" : ""
+                    }`}
                     required
+                    disabled={copyAddress}
                   />
                 </div>
               </div>
@@ -397,7 +469,7 @@ export default function EditWorkerModal({ worker, isOpen, onClose, onWorkerUpdat
                 Updating...
               </>
             ) : (
-              'Update Worker'
+              "Update Worker"
             )}
           </button>
         </div>

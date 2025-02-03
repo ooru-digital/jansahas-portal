@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, Camera, Upload, X, ChevronRight, Plus } from 'lucide-react';
+import { ArrowLeft, Camera, Upload, X, ChevronRight, Plus, Info } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import * as WorkerAPI from '../api/workers';
 import * as WorkHistoryAPI from '../api/workHistory';
@@ -14,6 +14,8 @@ interface AddWorkerProps {
 }
 
 type Step = 'worker' | 'work-history';
+
+type FormFields = keyof Omit<CreateWorkerData, 'age'> | 'age';
 
 export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
   const [step, setStep] = useState<Step>('worker');
@@ -53,6 +55,7 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
   const [showCamera, setShowCamera] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [dateError, setDateError] = useState<string>('');
+  const [copyAddress, setCopyAddress] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const photoRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -75,6 +78,26 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
       stopCamera();
     };
   }, []);
+
+  useEffect(() => {
+    if (copyAddress) {
+      setFormData(prev => ({
+        ...prev,
+        permanent_address_line1: prev.present_address_line1,
+        permanent_address_line2: prev.present_address_line2,
+        permanent_city: prev.present_city,
+        permanent_state: prev.present_state,
+        permanent_pincode: prev.present_pincode
+      }));
+    }
+  }, [
+    copyAddress,
+    formData.present_address_line1,
+    formData.present_address_line2,
+    formData.present_city,
+    formData.present_state,
+    formData.present_pincode
+  ]);
 
   const fetchOrganizations = async () => {
     try {
@@ -115,6 +138,20 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
     }
   };
 
+  const handleCopyAddress = (checked: boolean) => {
+    setCopyAddress(checked);
+    if (checked) {
+      setFormData(prev => ({
+        ...prev,
+        permanent_address_line1: prev.present_address_line1,
+        permanent_address_line2: prev.present_address_line2,
+        permanent_city: prev.present_city,
+        permanent_state: prev.present_state,
+        permanent_pincode: prev.present_pincode
+      }));
+    }
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     
@@ -127,10 +164,19 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
     }
 
     if (step === 'worker') {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value
-      }));
+      setFormData(prev => {
+        const newData = {
+          ...prev,
+          [name as FormFields]: value
+        };
+
+        if (copyAddress && name.startsWith('present_')) {
+          const permanentField = name.replace('present_', 'permanent_') as FormFields;
+          newData[permanentField] = value;
+        }
+
+        return newData;
+      });
     } else {
       if (name === 'start_date' || name === 'end_date') {
         const oneYearAgo = new Date();
@@ -315,6 +361,10 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
             />
+            <p className="mt-1 text-xs text-gray-500 flex items-center">
+              <Info className="h-3 w-3 mr-1 text-gray-400" />
+              Full Name should match the name on your Aadhaar card.
+            </p>
           </div>
 
           <div>
@@ -503,7 +553,18 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
 
           {/* Permanent Address Fields */}
           <div>
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Permanent Address</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-gray-900">Permanent Address</h3>
+              <label className="flex items-center gap-2 text-sm text-gray-600">
+                <input
+                  type="checkbox"
+                  checked={copyAddress}
+                  onChange={(e) => handleCopyAddress(e.target.checked)}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                Same as Present Address
+              </label>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -515,8 +576,11 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
                   value={formData.permanent_address_line1}
                   onChange={handleInputChange}
                   maxLength={30}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    copyAddress ? 'bg-gray-100 cursor-not-allowed' : ''
+                  }`}
                   required
+                  disabled={copyAddress}
                 />
                 <p className="mt-1 text-xs text-gray-500">{formData.permanent_address_line1.length}/30 characters</p>
               </div>
@@ -530,8 +594,11 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
                   value={formData.permanent_address_line2}
                   onChange={handleInputChange}
                   maxLength={30}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    copyAddress ? 'bg-gray-100 cursor-not-allowed' : ''
+                  }`}
                   required
+                  disabled={copyAddress}
                 />
                 <p className="mt-1 text-xs text-gray-500">{formData.permanent_address_line2.length}/30 characters</p>
               </div>
@@ -545,8 +612,11 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
                   value={formData.permanent_city}
                   onChange={handleInputChange}
                   maxLength={30}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    copyAddress ? 'bg-gray-100 cursor-not-allowed' : ''
+                  }`}
                   required
+                  disabled={copyAddress}
                 />
                 <p className="mt-1 text-xs text-gray-500">{formData.permanent_city.length}/30 characters</p>
               </div>
@@ -560,8 +630,11 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
                   value={formData.permanent_state}
                   onChange={handleInputChange}
                   maxLength={17}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    copyAddress ? 'bg-gray-100 cursor-not-allowed' : ''
+                  }`}
                   required
+                  disabled={copyAddress}
                 />
                 <p className="mt-1 text-xs text-gray-500">{formData.permanent_state.length}/17 characters</p>
               </div>
@@ -576,8 +649,11 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
                   onChange={handleInputChange}
                   pattern="[0-9]{6}"
                   maxLength={6}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    copyAddress ? 'bg-gray-100 cursor-not-allowed' : ''
+                  }`}
                   required
+                  disabled={copyAddress}
                 />
               </div>
             </div>
@@ -647,7 +723,7 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Work Name <span className="text-red-500">*</span>
+              Nature of Work <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
