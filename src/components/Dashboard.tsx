@@ -62,7 +62,7 @@ const WorkList = ({
               <td className="py-4">
                 <p className="font-medium text-gray-900">{work.worker_name}</p>
                 <p className="text-xs text-gray-500 sm:hidden">
-                  {work.work_name} - {work.work_type}
+                  {work.work_name}
                 </p>
                 <p className="text-xs text-gray-500">
                   {work.site_name} - {work.organization_name}
@@ -70,7 +70,6 @@ const WorkList = ({
               </td>
               <td className="py-4 hidden sm:table-cell">
                 <p className="text-sm text-gray-900">{work.work_name}</p>
-                <p className="text-xs text-gray-500">{work.work_type}</p>
               </td>
               <td className="py-4 hidden md:table-cell">
                 <p className="text-sm text-gray-500">{new Date(work.created_at).toLocaleDateString("en-GB")}</p>

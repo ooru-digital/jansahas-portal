@@ -372,7 +372,6 @@ export default function Approvals() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">{approval.work_name}</div>
-                        <div className="text-sm text-gray-500">{approval.work_type}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-500">{approval.organization_name}</div>
@@ -493,9 +492,6 @@ export default function Approvals() {
                     <div className="grid grid-cols-2 gap-x-2 gap-y-1 text-xs">
                       <div>
                         <span className="font-medium">Work:</span> {approval.work_name}
-                      </div>
-                      <div>
-                        <span className="font-medium">Type:</span> {approval.work_type}
                       </div>
                       <div>
                         <span className="font-medium">Organization:</span> {approval.organization_name}
