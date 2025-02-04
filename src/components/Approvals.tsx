@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle2, XCircle, Check, X, User, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { CheckCircle2, XCircle, Check, User, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { getPendingApprovals, bulkUpdateApprovalStatus, getWorkHistoryDetail, WorkHistoryDetail, ApprovalsResponse } from '../api/dashboard';
 import WorkHistoryDetailModal from './WorkHistoryDetailModal';
 import debounce from 'lodash/debounce';
+import RejectionModal from './RejectionModal';
 
 export default function Approvals() {
   const [approvalsData, setApprovalsData] = useState<ApprovalsResponse | null>(null);
@@ -17,6 +18,8 @@ export default function Approvals() {
   const [currentUrl, setCurrentUrl] = useState<string | null>(null);
   const [isJansathi, setIsJansathi] = useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showRejectionModal, setShowRejectionModal] = useState(false);
+  const [rejectingWorkId, setRejectingWorkId] = useState<number | null>(null);
 
   useEffect(() => {
     fetchApprovals();
@@ -69,10 +72,16 @@ export default function Approvals() {
     debouncedSearch(value);
   };
 
-  const handleApprovalAction = async (id: number, status: "approved" | "rejected") => {
+  const handleApprovalAction = async (id: number, status: "approved" | "rejected", rejectionReason?: string) => {
     try {
       setProcessingApproval(id);
-      const response = await bulkUpdateApprovalStatus([{ id, status }]);
+      const response = await bulkUpdateApprovalStatus([
+        {
+          id,
+          status,
+          rejection_reason: rejectionReason,
+        },
+      ]);
       if (response.success.length > 0) {
         fetchApprovals(currentUrl || undefined);
         toast.success(`Work history ${status} successfully`);
@@ -83,6 +92,19 @@ export default function Approvals() {
       toast.error(`Failed to ${status} work history`);
     } finally {
       setProcessingApproval(null);
+    }
+  };
+
+  const handleReject = (workId: number) => {
+    setRejectingWorkId(workId);
+    setShowRejectionModal(true);
+  };
+
+  const handleRejectionSubmit = async (reason: string) => {
+    if (rejectingWorkId) {
+      await handleApprovalAction(rejectingWorkId, "rejected", reason);
+      setShowRejectionModal(false);
+      setRejectingWorkId(null);
     }
   };
 
@@ -212,14 +234,6 @@ export default function Approvals() {
                 >
                   <Check className="h-5 w-5 mr-2" />
                   Approve Selected
-                </button>
-                <button
-                  onClick={() => handleBulkAction("rejected")}
-                  disabled={processingBulk}
-                  className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
-                >
-                  <X className="h-5 w-5 mr-2" />
-                  Reject Selected
                 </button>
               </div>
             )}
@@ -395,9 +409,11 @@ export default function Approvals() {
                                 <CheckCircle2 className="h-5 w-5 inline" />
                               </button>
                               <button
-                                onClick={() => handleApprovalAction(approval.id, "rejected")}
+                                onClick={() => handleReject(approval.id)}
                                 disabled={processingApproval === approval.id}
-                                className={`text-red-600 hover:text-red-900 ${processingApproval === approval.id ? "opacity-50 cursor-not-allowed" : ""}`}
+                                className={`text-red-600 hover:text-red-900 ${
+                                  processingApproval === approval.id ? "opacity-50 cursor-not-allowed" : ""
+                                }`}
                                 title="Reject"
                               >
                                 <XCircle className="h-5 w-5 inline" />
@@ -462,7 +478,7 @@ export default function Approvals() {
                             <CheckCircle2 className="h-5 w-5" />
                           </button>
                           <button
-                            onClick={() => handleApprovalAction(approval.id, "rejected")}
+                            onClick={() => handleReject(approval.id)}
                             disabled={processingApproval === approval.id}
                             className={`text-red-600 hover:text-red-900 ${
                               processingApproval === approval.id ? "opacity-50 cursor-not-allowed" : ""
@@ -524,9 +540,6 @@ export default function Approvals() {
                     >
                       <ChevronLeft className="h-5 w-5" />
                     </button>
-                    <span className="text-sm text-gray-700">
-                      Page {Math.floor(approvalsData.results.length / 10) + 1} of {Math.ceil(approvalsData.count / 10)}
-                    </span>
                     <button
                       onClick={handleNextPage}
                       disabled={!approvalsData.next}
@@ -542,9 +555,18 @@ export default function Approvals() {
                   <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                     <div>
                       <p className="text-sm text-gray-700">
-                        Showing <span className="font-medium">1</span> to{" "}
-                        <span className="font-medium">{approvalsData.results.length}</span> of{" "}
-                        <span className="font-medium">{approvalsData.count}</span> results
+                        {(() => {
+                          const pageSize = 10; // Assuming page size is 10
+                          const currentPage = approvalsData.previous
+                            ? Math.floor(
+                                Number.parseInt(new URL(approvalsData.previous).searchParams.get("offset") || "0") /
+                                  pageSize,
+                              ) + 2
+                            : 1;
+                          const startIndex = (currentPage - 1) * pageSize + 1;
+                          const endIndex = Math.min(startIndex + approvalsData.results.length - 1, approvalsData.count);
+                          return `Showing ${startIndex} to ${endIndex} of ${approvalsData.count} results`;
+                        })()}
                       </p>
                     </div>
                     <div>
@@ -593,6 +615,15 @@ export default function Approvals() {
           onStatusUpdate={fetchApprovals}
         />
       )}
+
+      <RejectionModal
+        isOpen={showRejectionModal}
+        onClose={() => {
+          setShowRejectionModal(false)
+          setRejectingWorkId(null)
+        }}
+        onSubmit={handleRejectionSubmit}
+      />
     </>
   );
 }

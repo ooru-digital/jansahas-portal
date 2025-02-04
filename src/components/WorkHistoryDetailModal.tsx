@@ -2,6 +2,8 @@ import { X, User, MapPin, Briefcase, Clock, Check, XCircle } from 'lucide-react'
 import { toast } from 'react-hot-toast';
 import type { WorkHistoryDetail } from '../api/dashboard';
 import { bulkUpdateApprovalStatus } from '../api/dashboard';
+import RejectionModal from './RejectionModal';
+import { useState } from 'react';
 
 interface WorkHistoryDetailModalProps {
   workHistory: WorkHistoryDetail;
@@ -36,6 +38,9 @@ export default function WorkHistoryDetailModal({
   isJansathi = false,
   onStatusUpdate
 }: WorkHistoryDetailModalProps) {
+  
+  const [showRejectionModal, setShowRejectionModal] = useState(false);
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-GB');
   };
@@ -53,15 +58,28 @@ export default function WorkHistoryDetailModal({
     }
   };
 
-  const handleApprovalAction = async (status: 'approved' | 'rejected') => {
+  const handleApprovalAction = async (status: 'approved' | 'rejected', rejectionReason?: string) => {
     try {
-      await bulkUpdateApprovalStatus([{ id: workHistory.id, status }]);
+      await bulkUpdateApprovalStatus([{ 
+        id: workHistory.id, 
+        status,
+        rejection_reason: rejectionReason 
+      }]);
       toast.success(`Work history ${status} successfully`);
       onStatusUpdate?.();
       onClose();
     } catch (error) {
       toast.error(`Failed to ${status} work history`);
     }
+  };
+
+  const handleReject = () => {
+    setShowRejectionModal(true);
+  };
+  
+  const handleRejectionSubmit = async (reason: string) => {
+    await handleApprovalAction('rejected', reason);
+    setShowRejectionModal(false);
   };
 
   return (
@@ -159,10 +177,6 @@ export default function WorkHistoryDetailModal({
                   <p className="text-sm sm:text-base font-medium">{workHistory.work_name}</p>
                 </div>
                 <div>
-                  <p className="text-xs sm:text-sm text-gray-500">Employment Type</p>
-                  <p className="text-sm sm:text-base font-medium">{workHistory.work_type}</p>
-                </div>
-                <div>
                   <p className="text-xs sm:text-sm text-gray-500">Duration</p>
                   <p className="text-sm sm:text-base font-medium">
                     {formatDate(workHistory.start_date)} - {formatDate(workHistory.end_date)}
@@ -212,6 +226,14 @@ export default function WorkHistoryDetailModal({
                     {workHistory.status}
                   </span>
                 </div>
+                <div>
+                  <p className="text-xs sm:text-sm text-gray-500">Created At</p>
+                  <p className="text-sm sm:text-base font-medium">{formatDate(workHistory.created_at)}</p>
+                </div>
+                <div>
+                  <p className="text-xs sm:text-sm text-gray-500">Created By</p>
+                  <p className="text-sm sm:text-base font-medium">{workHistory.created_by || "NA"}</p>
+                </div>
                 {workHistory.approved_date && (
                   <div>
                     <p className="text-xs sm:text-sm text-gray-500">Approved At</p>
@@ -231,15 +253,17 @@ export default function WorkHistoryDetailModal({
                   </div>
                 )}
                 {workHistory.status === "rejected" && (
-                  <div>
-                    <p className="text-xs sm:text-sm text-gray-500">Rejected By</p>
-                    <p className="text-sm sm:text-base font-medium">{workHistory.rejected_by || "NA"}</p>
-                  </div>
-                )}
-                <div>
-                  <p className="text-xs sm:text-sm text-gray-500">Created At</p>
-                  <p className="text-sm sm:text-base font-medium">{formatDate(workHistory.created_at)}</p>
-                </div>
+                  <>
+                    <div>
+                      <p className="text-xs sm:text-sm text-gray-500">Rejected By</p>
+                      <p className="text-sm sm:text-base font-medium">{workHistory.rejected_by || "NA"}</p>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <p className="text-xs sm:text-sm text-gray-500">Rejection Reason</p>
+                      <p className="text-sm sm:text-base font-medium whitespace-pre-wrap">{workHistory.rejection_reason || "NA"}</p>
+                    </div>
+                  </>
+                )}                
               </div>
             </div>
           </div>
@@ -249,7 +273,7 @@ export default function WorkHistoryDetailModal({
         {isFromApprovals && !isJansathi && workHistory.status === 'pending' && (
           <div className="flex justify-end gap-4 p-6 border-t mt-auto">
             <button
-              onClick={() => handleApprovalAction('rejected')}
+              onClick={handleReject}
               className="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 flex items-center gap-2"
             >
               <XCircle className="h-5 w-5" />
@@ -264,6 +288,12 @@ export default function WorkHistoryDetailModal({
             </button>
           </div>
         )}
+
+        <RejectionModal
+          isOpen={showRejectionModal}
+          onClose={() => setShowRejectionModal(false)}
+          onSubmit={handleRejectionSubmit}
+        />
       </div>
     </div>
   );

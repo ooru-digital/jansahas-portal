@@ -21,6 +21,7 @@ export interface WorkDetail {
   worker: string;
   site: string;
   created_at: string;
+  created_by: string;
   updated_at: string;
   number_of_working_days: number;
   isJansathi: boolean;
@@ -48,14 +49,15 @@ export interface WorkHistoryDetail extends WorkDetail {
   permanent_city: string;
   permanent_state: string;
   permanent_pincode: string;
-  avg_daily_wages: number;
   approved_by?: string;
   rejected_by?: string;
+  rejection_reason?: string;
 }
 
 interface BulkUpdateItem {
   id: number;
   status: 'approved' | 'rejected';
+  rejection_reason?: string;
 }
 
 interface BulkUpdateResponse {
