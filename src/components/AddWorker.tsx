@@ -361,10 +361,6 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
             />
-            <p className="mt-1 text-xs text-gray-500 flex items-center">
-              <Info className="h-3 w-3 mr-1 text-gray-400" />
-              Full Name should match the name on your Aadhaar card.
-            </p>
           </div>
 
           <div>
@@ -813,21 +809,26 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
         <div className="max-w-3xl mx-auto">
           <div className="bg-white rounded-lg shadow-sm">
             <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h1 className="text-2xl font-bold text-gray-900">
-                  {step === 'worker' ? 'Add New Worker' : 'Add Work History'}
-                </h1>
-                <div className="flex items-center gap-2 text-sm text-gray-500">
-                  <span className={step === 'worker' ? 'text-blue-600 font-medium' : 'text-gray-400'}>
-                    Worker Details
-                  </span>
-                  <ChevronRight className="h-4 w-4" />
-                  <span className={step === 'work-history' ? 'text-blue-600 font-medium' : 'text-gray-400'}>
-                    Work History
-                  </span>
+              <div className="flex flex-col mb-6">
+                <div className="flex items-center justify-between">
+                  <h1 className="text-2xl font-bold text-gray-900">
+                    {step === 'worker' ? 'Add New Worker' : 'Add Work History'}
+                  </h1>
+                  <div className="flex items-center gap-2 text-sm text-gray-500 ml-4">
+                    <span className={step === 'worker' ? 'text-blue-600 font-medium' : 'text-gray-400'}>
+                      Worker Details
+                    </span>
+                    <ChevronRight className="h-4 w-4" />
+                    <span className={step === 'work-history' ? 'text-blue-600 font-medium' : 'text-gray-400'}>
+                      Work History
+                    </span>
+                  </div>
                 </div>
-              </div>
-              
+                <p className="mt-2 text-sm text-gray-500 flex items-center">
+                  <Info className="h-4 w-4 mr-2 text-gray-400" />
+                  All field values must match the details on the worker's Aadhaar card.
+                </p>
+              </div>              
               {step === 'worker' ? renderWorkerForm() : renderWorkHistoryForm()}
             </div>
           </div>
