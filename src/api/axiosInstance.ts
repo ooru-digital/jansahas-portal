@@ -1,6 +1,7 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { refreshToken } from './auth';
 import { toast } from 'react-hot-toast';
+import * as Sentry from "@sentry/react";
 
 declare module 'axios' {
   interface InternalAxiosRequestConfig {
@@ -113,6 +114,7 @@ api.interceptors.request.use(
   (error) => {
     const errorMessage = getErrorMessage(error as AxiosError);
     toast.error(errorMessage);
+    Sentry.captureException(error);
     return Promise.reject(error);
   }
 );
@@ -126,6 +128,7 @@ api.interceptors.response.use(
     if (!originalRequest) {
       const errorMessage = getErrorMessage(error);
       toast.error(errorMessage);
+      Sentry.captureException(error);
       return Promise.reject(error);
     }
 
@@ -187,9 +190,17 @@ api.interceptors.response.use(
       }
     }
 
-    // For all other errors, show error message
+    // For all other errors, show error message and capture in Sentry
     const errorMessage = getErrorMessage(error);
     toast.error(errorMessage);
+    Sentry.captureException(error, {
+      extra: {
+        url: originalRequest.url,
+        method: originalRequest.method,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+      },
+    });
     return Promise.reject(error);
   }
 );
