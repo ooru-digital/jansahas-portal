@@ -154,7 +154,7 @@ export default function VerifyCredential() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Status Banner */}
         <div className={`mb-8 p-6 rounded-lg text-center ${statusInfo.color}`}>
-          <div className="flex items-center justify-center gap-3">
+          <div className="flex flex-col items-center gap-4">
             <div className="relative">
               <StatusIcon 
                 className={`h-12 w-12 ${statusInfo.iconColor} ${showStatusAnimation ? statusInfo.animation : ''} stroke-[2]`} 
@@ -167,9 +167,32 @@ export default function VerifyCredential() {
                 </div>
               )}
             </div>
-            <span className="text-xl font-medium">
-              {data.vc_data.verification_status} 90 Days Employment Certificate of {data.worker_details.name}
-            </span>
+            <div className="space-y-2">
+              <span className="text-xl font-medium">
+                {data.vc_data.verification_status} 90 Days Employment Certificate of {data.worker_details.name}
+              </span>
+              {data.worker_details.credential_validity_last_90_days && (
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-2 text-sm">
+                  <div className={`px-4 py-2 rounded-lg ${
+                    data.vc_data.verification_status === 'Valid' 
+                      ? 'bg-white bg-opacity-25' 
+                      : 'bg-black bg-opacity-10'
+                  }`}>
+                    <span className="font-medium">Valid From:</span>{' '}
+                    {data.worker_details.credential_validity_last_90_days.start_date}
+                  </div>
+                  <div className="hidden sm:block">•</div>
+                  <div className={`px-4 py-2 rounded-lg ${
+                    data.vc_data.verification_status === 'Valid' 
+                      ? 'bg-white bg-opacity-25' 
+                      : 'bg-black bg-opacity-10'
+                  }`}>
+                    <span className="font-medium">Valid Until:</span>{' '}
+                    {data.worker_details.credential_validity_last_90_days.end_date}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

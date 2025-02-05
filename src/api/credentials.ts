@@ -19,6 +19,10 @@ export interface WorkerDetails {
   sex: string;
   photograph: string;
   total_approved_work_days: number;
+  credential_validity_last_90_days?: {
+    start_date: string;
+    end_date: string;
+  };
 }
 
 export interface AuditLog {
