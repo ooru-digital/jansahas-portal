@@ -71,16 +71,16 @@ export default function Login({ onLogin }: LoginProps) {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-gray-700 text-sm font-medium mb-2">
-                  Email
+                  Email / Username
                 </label>
                 <div className="relative">
                   <input
-                    type="email"
+                    type="text"
                     name="email"
                     value={formData.email}
                     onChange={handleInputChange}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent pl-10"
-                    placeholder="Enter your email"
+                    placeholder="Enter your email or username"
                     required
                     disabled={isSubmitting}
                   />

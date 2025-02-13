@@ -76,7 +76,7 @@ export default function DashboardLayout({ isAuthenticated, onLogout }: Dashboard
       {/* Sidebar for desktop */}
       <div className="hidden md:flex md:flex-col md:w-64 md:fixed md:inset-y-0 bg-white border-r border-gray-200">
         <div className="flex flex-col flex-grow pt-5 overflow-y-auto">
-          <div className="flex items-center flex-shrink-0 px-4">
+          <div className="flex items-center flex-shrink-0 px-3">
             {userInfo?.organization_logo ? (
               <div className="flex items-center gap-3">
                 <img 
