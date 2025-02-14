@@ -87,6 +87,7 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [showPhoneNumber, setShowPhoneNumber] = useState(false);
   const [isGeneratingVC, setIsGeneratingVC] = useState(false);
+  const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
   const videoRef = useRef<HTMLVideoElement>(null);
   const photoRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -155,9 +156,9 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
     try {
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: {
-          facingMode: "user",
+          facingMode: facingMode,
           width: { ideal: 1280 },
-          height: { ideal: 720 }
+          height: { ideal: 720 },
         }
       });
       
@@ -171,6 +172,19 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
       setShowCamera(false);
     }
   };
+  
+  const toggleCamera = () => {
+    setFacingMode((prevMode) => (prevMode === "user" ? "environment" : "user"));
+  };
+
+  useEffect(() => {
+    if (showCamera) {
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop());
+      }
+      initializeCamera();
+    }
+  }, [facingMode]);
 
   const startCamera = () => {
     setShowCamera(true);
@@ -817,36 +831,48 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
       )}
 
       {showCamera && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full overflow-hidden">
+          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg w-full max-w-md max-h-[90vh] overflow-hidden">
             <div className="p-4 border-b border-gray-200 flex justify-between items-center">
               <h3 className="text-lg font-medium text-gray-900">Take Photo</h3>
-              <button type="button" onClick={stopCamera} className="text-gray-400 hover:text-gray-500">
+              <button
+                type="button"
+                onClick={stopCamera}
+                className="text-gray-400 hover:text-gray-500"
+              >
                 <X className="h-6 w-6" />
               </button>
             </div>
 
-            <div className="p-4">
+            <div className="p-3 sm:p-4">
               <div className="relative bg-black rounded-lg overflow-hidden">
                 <video
                   ref={videoRef}
                   autoPlay
                   playsInline
                   className="w-full h-auto"
-                  style={{ transform: "scaleX(-1)" }}
+                  style={{ transform: 'scaleX(-1)' }}
                 />
                 <canvas ref={photoRef} className="hidden" />
+              </div>
 
-                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
-                  <button
-                    type="button"
-                    onClick={capturePhoto}
-                    className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-full shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    <Camera className="h-5 w-5 mr-2" />
-                    Capture Photo
-                  </button>
-                </div>
+              <div className="mt-4 flex flex-col sm:flex-row gap-4 justify-center">
+                <button
+                  type="button"
+                  onClick={capturePhoto}
+                  className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 w-full sm:w-auto"
+                >
+                  <Camera className="h-5 w-5 mr-2" />
+                  Capture Photo
+                </button>
+                <button
+                  type="button"
+                  onClick={toggleCamera}
+                  className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 w-full sm:w-auto"
+                >
+                  <RefreshCw className="h-5 w-5 mr-2" />
+                  Rotate Camera
+                </button>
               </div>
 
               <p className="mt-2 text-sm text-gray-500 text-center">
