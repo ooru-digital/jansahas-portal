@@ -831,8 +831,8 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
       )}
 
       {showCamera && (
-          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg w-full max-w-md max-h-[90vh] overflow-hidden">
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg w-full max-w-md max-h-[90vh] flex flex-col overflow-auto">
             <div className="p-4 border-b border-gray-200 flex justify-between items-center">
               <h3 className="text-lg font-medium text-gray-900">Take Photo</h3>
               <button
@@ -844,7 +844,7 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
               </button>
             </div>
 
-            <div className="p-3 sm:p-4">
+            <div className="p-3 sm:p-4 flex flex-col flex-grow">
               <div className="relative bg-black rounded-lg overflow-hidden">
                 <video
                   ref={videoRef}
@@ -856,7 +856,7 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
                 <canvas ref={photoRef} className="hidden" />
               </div>
 
-              <div className="mt-4 flex flex-col sm:flex-row gap-4 justify-center">
+              <div className="mt-4 flex flex-col sm:flex-row gap-4 justify-center pb-4 px-4">
                 <button
                   type="button"
                   onClick={capturePhoto}
