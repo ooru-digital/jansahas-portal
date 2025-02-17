@@ -17,6 +17,20 @@ type Step = 'worker' | 'work-history';
 
 type FormFields = keyof Omit<CreateWorkerData, 'age'> | 'age';
 
+const NATURE_OF_WORK_OPTIONS = [
+  'Helper',
+  'Mason',
+  'Welder',
+  'Painter',
+  'Plumbing',
+  'Carpenter',
+  'Labor',
+  'Crain Operator',
+  'Centering worker',
+  'Tails worker',
+  'Gang Worker'
+];
+
 export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
   const [step, setStep] = useState<Step>('worker');
   const [createdWorkerId, setCreatedWorkerId] = useState<number | null>(null);
@@ -66,7 +80,7 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
       initializeCamera();
     }
     fetchOrganizations();
-  }, [showCamera]);
+  }, [showCamera, stream]);
 
   useEffect(() => {
     if (workHistoryData.organization_id) {
@@ -132,6 +146,7 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
       
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
+        videoRef.current.style.transform = facingMode === 'user' ? 'scaleX(-1)' : 'scaleX(1)';
       }
     } catch (error) {
       toast.error('Unable to access camera');
@@ -256,7 +271,12 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
       canvas.width = targetWidth;
       canvas.height = targetHeight;
 
-      context?.drawImage(video, 0, 0, targetWidth, targetHeight);
+      if (facingMode === 'user') {
+        context?.scale(-1, 1);
+        context?.drawImage(video, -targetWidth, 0, targetWidth, targetHeight);
+      } else {
+        context?.drawImage(video, 0, 0, targetWidth, targetHeight);
+      }
 
       canvas.toBlob((blob) => {
         if (blob) {
@@ -735,15 +755,19 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Nature of Work <span className="text-red-500">*</span>
             </label>
-            <input
-              type="text"
+            <select
               name="work_name"
               value={workHistoryData.work_name}
               onChange={handleInputChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
-            />
-          </div>         
+            >
+              <option value="">Select Nature of Work</option>
+              {NATURE_OF_WORK_OPTIONS.map(option => (
+                <option key={option} value={option}>{option}</option>
+              ))}
+            </select>
+          </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -870,7 +894,6 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
                   autoPlay
                   playsInline
                   className="w-full h-auto"
-                  style={{ transform: 'scaleX(-1)' }}
                 />
                 <canvas ref={photoRef} className="hidden" />
               </div>
@@ -894,7 +917,7 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
                 </button>
               </div>
 
-              <p className="mt-2 text-sm text-gray-500 text-center">
+              <p className="mt-3 text-sm text-gray-500 text-center">
                 Position yourself in the frame and click the capture button
               </p>
             </div>

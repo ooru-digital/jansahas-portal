@@ -26,6 +26,20 @@ export default function WorkHistoryFormModal({
 }: WorkHistoryFormModalProps) {
   const [dateError, setDateError] = useState<string>('');
 
+  const NATURE_OF_WORK_OPTIONS = [
+    'Helper',
+    'Mason',
+    'Welder',
+    'Painter',
+    'Plumbing',
+    'Carpenter',
+    'Labor',
+    'Crain Operator',
+    'Centering worker',
+    'Tails worker',
+    'Gang Worker'
+  ];
+
   if (!isOpen) return null;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -157,14 +171,18 @@ export default function WorkHistoryFormModal({
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Nature of Work <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="text"
+                <select
                   name="work_name"
                   value={formData.work_name}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
-                />
+                >
+                  <option value="">Select Nature of Work</option>
+                  {NATURE_OF_WORK_OPTIONS.map(option => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                </select>
               </div>
 
               <div>

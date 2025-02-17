@@ -166,6 +166,7 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
       
       if (videoRef.current) {
         videoRef.current.srcObject = mediaStream;
+        videoRef.current.style.transform = facingMode === 'user' ? 'scaleX(-1)' : 'scaleX(1)';
       }
     } catch (error) {
       toast.error("Unable to access camera");
@@ -216,7 +217,12 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
       canvas.width = targetWidth;
       canvas.height = targetHeight;
 
-      context.drawImage(video, 0, 0, targetWidth, targetHeight);
+      if (facingMode === 'user') {
+        context?.scale(-1, 1);
+        context?.drawImage(video, -targetWidth, 0, targetWidth, targetHeight);
+      } else {
+        context?.drawImage(video, 0, 0, targetWidth, targetHeight);
+      }
 
       const base64Image = canvas.toDataURL('image/jpeg', 0.8);
       
@@ -851,7 +857,6 @@ export default function WorkHistoryView({ workerId, onBack }: WorkHistoryViewPro
                   autoPlay
                   playsInline
                   className="w-full h-auto"
-                  style={{ transform: 'scaleX(-1)' }}
                 />
                 <canvas ref={photoRef} className="hidden" />
               </div>
