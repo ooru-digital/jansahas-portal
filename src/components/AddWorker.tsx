@@ -28,7 +28,9 @@ const NATURE_OF_WORK_OPTIONS = [
   'Crain Operator',
   'Centering worker',
   'Tails worker',
-  'Gang Worker'
+  'Gang Worker',
+  'Polishing',
+  'Others'
 ];
 
 export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
@@ -71,6 +73,8 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
   const [dateError, setDateError] = useState<string>('');
   const [copyAddress, setCopyAddress] = useState(false);
   const [facingMode, setFacingMode] = useState<"user" | "environment">("user");
+  const [showOtherInput, setShowOtherInput] = useState(false);
+  const [otherWorkName, setOtherWorkName] = useState('');
   const videoRef = useRef<HTMLVideoElement>(null);
   const photoRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -237,11 +241,37 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
         setDateError('');
       }
 
-      setWorkHistoryData(prev => ({
-        ...prev,
-        [name]: value
-      }));
+      if (name === 'work_name') {
+        if (value === 'Others') {
+          setShowOtherInput(true);
+          setWorkHistoryData(prev => ({
+            ...prev,
+            work_name: ''
+          }));
+        } else {
+          setShowOtherInput(false);
+          setOtherWorkName('');
+          setWorkHistoryData(prev => ({
+            ...prev,
+            work_name: value
+          }));
+        }
+      } else {
+        setWorkHistoryData(prev => ({
+          ...prev,
+          [name]: value
+        }));
+      }
     }
+  };
+
+  const handleOtherWorkNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setOtherWorkName(value);
+    setWorkHistoryData(prev => ({
+      ...prev,
+      work_name: value
+    }));
   };
 
   const startCamera = () => {
@@ -377,6 +407,12 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
 
   const formatDateForInput = (date: Date) => {
     return date.toISOString().split('T')[0];
+  };
+
+  // Helper function to determine the select value
+  const getWorkNameValue = () => {
+    if (showOtherInput) return 'Others';
+    return workHistoryData.work_name || '';
   };
 
   function renderWorkerForm() {
@@ -757,7 +793,7 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
             </label>
             <select
               name="work_name"
-              value={workHistoryData.work_name}
+              value={getWorkNameValue()}
               onChange={handleInputChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
@@ -766,8 +802,24 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
               {NATURE_OF_WORK_OPTIONS.map(option => (
                 <option key={option} value={option}>{option}</option>
               ))}
-            </select>
+            </select>            
           </div>
+
+          {showOtherInput && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Specify Nature of Work <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={otherWorkName}
+                onChange={handleOtherWorkNameChange}
+                placeholder="Nature of Work"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                required
+              />
+            </div>
+          )}     
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Pencil, Plus } from 'lucide-react';
 import type { CreateWorkHistoryData } from '../api/workHistory';
 import type { Organization, Site } from '../api/organizations';
@@ -14,6 +14,22 @@ interface WorkHistoryFormModalProps {
   isEditing: boolean;
 }
 
+const NATURE_OF_WORK_OPTIONS = [
+  'Helper',
+  'Mason',
+  'Welder',
+  'Painter',
+  'Plumbing',
+  'Carpenter',
+  'Labor',
+  'Crain Operator',
+  'Centering worker',
+  'Tails worker',
+  'Gang Worker',
+  'Polishing',
+  'Others'
+];
+
 export default function WorkHistoryFormModal({ 
   isOpen, 
   onClose, 
@@ -25,20 +41,24 @@ export default function WorkHistoryFormModal({
   isEditing 
 }: WorkHistoryFormModalProps) {
   const [dateError, setDateError] = useState<string>('');
+  const [showOtherInput, setShowOtherInput] = useState(false);
+  const [otherWorkName, setOtherWorkName] = useState('');
 
-  const NATURE_OF_WORK_OPTIONS = [
-    'Helper',
-    'Mason',
-    'Welder',
-    'Painter',
-    'Plumbing',
-    'Carpenter',
-    'Labor',
-    'Crain Operator',
-    'Centering worker',
-    'Tails worker',
-    'Gang Worker'
-  ];
+  // Effect to handle initial state when opening the modal
+  useEffect(() => {
+    if (isOpen) {
+      // Check if the current work_name is not in the predefined options
+      const isCustomWorkName = !!formData.work_name && !NATURE_OF_WORK_OPTIONS.slice(0, -1).includes(formData.work_name);
+      setShowOtherInput(isCustomWorkName);
+      if (isCustomWorkName) {
+        setOtherWorkName(formData.work_name);
+      }
+    } else {
+      // Reset state when modal closes
+      setShowOtherInput(false);
+      setOtherWorkName('');
+    }
+  }, [isOpen, formData.work_name]);
 
   if (!isOpen) return null;
 
@@ -75,10 +95,24 @@ export default function WorkHistoryFormModal({
       setDateError('');
     }
 
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    if (name === 'work_name') {
+      if (value === 'Others') {
+        setShowOtherInput(true);
+        setFormData(prev => ({ ...prev, work_name: '' })); // Clear work_name when selecting Others
+      } else {
+        setShowOtherInput(false);
+        setOtherWorkName('');
+        setFormData(prev => ({ ...prev, work_name: value }));
+      }
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const handleOtherWorkNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setOtherWorkName(value);
+    setFormData(prev => ({ ...prev, work_name: value }));
   };
 
   // Calculate date limits
@@ -110,6 +144,12 @@ export default function WorkHistoryFormModal({
     }
 
     onSubmit(e);
+  };
+
+  // Helper function to determine the select value
+  const getWorkNameValue = () => {
+    if (showOtherInput) return 'Others';
+    return formData.work_name || '';
   };
 
   return (
@@ -173,7 +213,7 @@ export default function WorkHistoryFormModal({
                 </label>
                 <select
                   name="work_name"
-                  value={formData.work_name}
+                  value={getWorkNameValue()}
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
@@ -184,6 +224,22 @@ export default function WorkHistoryFormModal({
                   ))}
                 </select>
               </div>
+
+              {showOtherInput && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Specify Nature of Work <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={otherWorkName}
+                    onChange={handleOtherWorkNameChange}
+                    placeholder="Nature of Work"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                  />
+                </div>
+              )}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
