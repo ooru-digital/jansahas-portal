@@ -84,7 +84,7 @@ export default function DashboardLayout({ isAuthenticated, onLogout }: Dashboard
                   alt={userInfo.organization_name}
                   className="h-12 w-12 rounded-full object-contain border-2 border-gray-200 p-1"
                 />
-                <span className="text-xl font-semibold text-gray-900 truncate">
+                <span className="text-xl font-semibold text-gray-900 break-words">
                   {userInfo.is_jansathi ? 'Worker Registry' : userInfo.organization_name}
                 </span>
               </div>
