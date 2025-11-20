@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Navigate, Outlet, NavLink } from 'react-router-dom';
-import { Home, Users, CheckSquare, LogOut, Menu, X, ChevronDown } from 'lucide-react';
+import { Home, Users, CheckSquare, Clock, Receipt, LogOut, Menu, X, ChevronDown } from 'lucide-react';
 import Footer from '../components/Footer';
 
 interface DashboardLayoutProps {
@@ -50,7 +50,9 @@ export default function DashboardLayout({ isAuthenticated, onLogout }: Dashboard
   const navigation = [
     { name: 'Dashboard', path: '/dashboard', icon: Home },
     { name: 'Workers', path: '/workers', icon: Users },
+    { name: 'Attendance', path: '/attendance', icon: Clock },
     { name: 'Approvals', path: '/approvals', icon: CheckSquare },
+    { name: 'Voucher Disbursement', path: '/disbursement', icon: Receipt },
   ];
 
   const renderUserAvatar = () => {

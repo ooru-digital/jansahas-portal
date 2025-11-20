@@ -10,6 +10,8 @@ import WorkerDetails from './pages/WorkerDetails';
 import AddWorker from './pages/AddWorker';
 import BulkUpload from './pages/BulkUpload';
 import Approvals from './pages/Approvals';
+import Attendance from './pages/Attendance';
+import Reconciliation from './pages/Reconciliation';
 import VerifyCredential from './components/VerifyCredential';
 
 export default function App() {
@@ -62,6 +64,8 @@ export default function App() {
           <Route path="/workers/add-worker" element={<AddWorker />} />
           <Route path="/workers/add-in-bulk" element={<BulkUpload />} />
           <Route path="/approvals" element={<Approvals />} />
+          <Route path="/attendance" element={<Attendance />} />
+          <Route path="/disbursement" element={<Reconciliation />} />
         </Route>
 
         {/* Redirect root path to login or dashboard based on auth state */}

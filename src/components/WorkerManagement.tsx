@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { ChevronRight, Search, Plus, Upload, Trash2, Pencil, User, ChevronLeft, Eye, EyeOff, X } from 'lucide-react';
+import { ChevronRight, Search, Plus, Upload, Trash2, Pencil, User, ChevronLeft, Eye, EyeOff, X, Ticket } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import debounce from 'lodash/debounce';
@@ -7,6 +7,7 @@ import * as WorkerAPI from '../api/workers';
 import type { Worker, WorkersResponse, WorkersQueryParams } from '../api/workers';
 import EditWorkerModal from './EditWorkerModal';
 import DeleteConfirmationModal from './DeleteConfirmationModal';
+import VoucherModal from './VoucherModal';
 
 const maskPhoneNumber = (phone: string) => {
   return phone.replace(/(\d{2})(\d{4})(\d{4})/, '$1****$3');
@@ -25,6 +26,8 @@ export default function WorkerManagement() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingWorkerId, setDeletingWorkerId] = useState<number | null>(null);
   const [editingWorker, setEditingWorker] = useState<Worker | null>(null);
+  const [showVoucherModal, setShowVoucherModal] = useState(false);
+  const [selectedWorkerForVoucher, setSelectedWorkerForVoucher] = useState<Worker | null>(null);
   const [isJansathi, setIsJansathi] = useState<boolean>(false);
   const [showPhoneNumbers, setShowPhoneNumbers] = useState<Set<number>>(new Set());
   const [filters, setFilters] = useState<{
@@ -219,6 +222,12 @@ export default function WorkerManagement() {
     setShowPhoneNumbers(newShowPhoneNumbers);
   };
 
+  const handleSendVoucher = (worker: Worker, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedWorkerForVoucher(worker);
+    setShowVoucherModal(true);
+  };
+
   async function handlePaginationClick(url: string) {
     try {
       const urlObj = new URL(url);
@@ -347,6 +356,7 @@ export default function WorkerManagement() {
                         <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone Number</th>
                         <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Approved Days</th>
                         <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created By</th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Voucher</th>
                         <th scope="col" className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                       </tr>
                     </thead>
@@ -407,6 +417,16 @@ export default function WorkerManagement() {
                           </td>
                           <td className="px-4 py-3">
                             <div className="text-sm text-gray-500">{worker.created_by || "NA"}</div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <button
+                              onClick={(e) => handleSendVoucher(worker, e)}
+                              className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
+                              title="Send Voucher"
+                            >
+                              <Ticket className="h-4 w-4 mr-1" />
+                              Send
+                            </button>
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex items-center justify-center space-x-3">
@@ -473,6 +493,13 @@ export default function WorkerManagement() {
                                 <p className="text-xs text-gray-500 mt-1">Created by: {worker.created_by || "NA"}</p>
                               </div>
                               <div className="flex space-x-2">
+                                <button
+                                  onClick={(e) => handleSendVoucher(worker, e)}
+                                  className="text-blue-600 hover:text-blue-900 p-1 rounded-full hover:bg-blue-50"
+                                  title="Send Voucher"
+                                >
+                                  <Ticket className="h-4 w-4" />
+                                </button>
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation()
@@ -619,6 +646,18 @@ export default function WorkerManagement() {
         title="Delete Worker"
         message="Are you sure you want to delete this worker? This will also delete all their work history and cannot be undone."
       />
+
+      {selectedWorkerForVoucher && (
+        <VoucherModal
+          isOpen={showVoucherModal}
+          onClose={() => {
+            setShowVoucherModal(false);
+            setSelectedWorkerForVoucher(null);
+          }}
+          workerName={selectedWorkerForVoucher.name}
+          workerId={selectedWorkerForVoucher.id}
+        />
+      )}
     </>
   );
 }
