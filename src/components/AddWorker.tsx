@@ -39,6 +39,7 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
   const [formData, setFormData] = useState<Omit<CreateWorkerData, 'age'> & { age: string }>({
     name: '',
     phone_number: '',
+    email: '',
     present_address_line1: '',
     present_address_line2: '',
     present_city: '',
@@ -359,9 +360,10 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
     try {
       const workerData: CreateWorkerData = {
         ...formData,
-        age: ageNum // Convert age to number before sending to API
+        age: ageNum,
+        email: formData.email?.trim() || undefined
       };
-      
+
       const worker = await WorkerAPI.createWorker(workerData);
       toast.success('Worker added successfully');
       setCreatedWorkerId(worker.id);
@@ -479,6 +481,20 @@ export default function AddWorker({ onBack, onWorkerAdded }: AddWorkerProps) {
               title="Please enter a valid 10-digit phone number"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email
+            </label>
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleInputChange}
+              placeholder="example@email.com"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 

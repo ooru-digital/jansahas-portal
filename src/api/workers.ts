@@ -4,6 +4,7 @@ export interface Worker {
   id: number;
   name: string;
   phone_number: string;
+  email?: string;
   present_address_line1: string;
   present_address_line2: string;
   present_city: string;
@@ -25,6 +26,7 @@ export interface Worker {
 export interface CreateWorkerData {
   name: string;
   phone_number: string;
+  email?: string;
   present_address_line1: string;
   present_address_line2: string;
   present_city: string;
@@ -235,5 +237,21 @@ export const deleteWorker = async (id: number): Promise<void> => {
       throw new Error(`Failed to delete worker: ${error.message}`);
     }
     throw new Error('Failed to delete worker');
+  }
+};
+
+export interface SendVoucherData {
+  category_id: string;
+  email: string;
+}
+
+export const sendVoucher = async (workerId: number, data: SendVoucherData): Promise<void> => {
+  try {
+    await api.post(`/${workerId}/vouchers/send/`, data);
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new Error(`Failed to send voucher: ${error.message}`);
+    }
+    throw new Error('Failed to send voucher');
   }
 };

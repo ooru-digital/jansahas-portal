@@ -1,20 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Filter, Search, ChevronLeft, ChevronRight, User } from 'lucide-react';
-import { getWorkers, Worker } from '../api/workers';
+import { Calendar, Filter, Search, ChevronLeft, ChevronRight, User, LogIn, LogOut, TrendingUp } from 'lucide-react';
 import { getOrganizations, Organization } from '../api/organizations';
+import { getAttendance, AttendanceRecord } from '../api/attendance';
 import toast from 'react-hot-toast';
-
-interface AttendanceRecord {
-  workerId: number;
-  workerName: string;
-  phoneNumber: string;
-  organizationId: string;
-  photograph: string | null;
-  date: string;
-  inTime: string;
-  outTime: string;
-  status: 'present' | 'absent' | 'half-day';
-}
 
 export default function Attendance() {
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
@@ -22,11 +10,12 @@ export default function Attendance() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedOrganization, setSelectedOrganization] = useState<string>('all');
+  const [attendanceTypeFilter, setAttendanceTypeFilter] = useState<string>('all');
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [userInfo, setUserInfo] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const recordsPerPage = 10;
+  const [totalRecords, setTotalRecords] = useState(0);
+  const recordsPerPage = 50;
 
   useEffect(() => {
     const userInfoStr = localStorage.getItem('userInfo');
@@ -40,11 +29,11 @@ export default function Attendance() {
     if (userInfo) {
       loadData();
     }
-  }, [userInfo]);
+  }, [userInfo, currentPage, selectedDate, attendanceTypeFilter]);
 
   useEffect(() => {
     filterRecords();
-  }, [attendanceRecords, searchTerm, selectedOrganization, selectedDate]);
+  }, [attendanceRecords, searchTerm]);
 
   const loadData = async () => {
     setIsLoading(true);
@@ -54,9 +43,19 @@ export default function Attendance() {
         setOrganizations(orgsData);
       }
 
-      const workersData = await getWorkers({ limit: 10 });
-      const mockAttendance = generateMockAttendance(workersData.results, selectedDate);
-      setAttendanceRecords(mockAttendance);
+      const params: any = {
+        limit: recordsPerPage,
+        offset: (currentPage - 1) * recordsPerPage,
+        date: selectedDate
+      };
+
+      if (attendanceTypeFilter !== 'all') {
+        params.attendanceType = attendanceTypeFilter;
+      }
+
+      const response = await getAttendance(params);
+      setAttendanceRecords(response.data);
+      setTotalRecords(response.total);
     } catch (error) {
       toast.error('Failed to load attendance data');
       console.error(error);
@@ -65,46 +64,17 @@ export default function Attendance() {
     }
   };
 
-  const generateMockAttendance = (workers: Worker[], date: string): AttendanceRecord[] => {
-    const statuses: ('present' | 'absent' | 'half-day')[] = ['present', 'present', 'present', 'present', 'absent', 'half-day'];
-
-    return workers.map((worker, index) => {
-      const status = statuses[index % statuses.length];
-      const baseInHour = 8 + Math.floor(Math.random() * 2);
-      const inMinute = Math.floor(Math.random() * 60);
-      const outHour = 17 + Math.floor(Math.random() * 2);
-      const outMinute = Math.floor(Math.random() * 60);
-
-      return {
-        workerId: worker.id,
-        workerName: worker.name,
-        phoneNumber: worker.phone_number,
-        organizationId: worker.organization_id,
-        photograph: worker.photograph,
-        date: date,
-        inTime: status !== 'absent' ? `${baseInHour.toString().padStart(2, '0')}:${inMinute.toString().padStart(2, '0')}` : '-',
-        outTime: status !== 'absent' ? `${outHour.toString().padStart(2, '0')}:${outMinute.toString().padStart(2, '0')}` : '-',
-        status: status
-      };
-    });
-  };
-
   const filterRecords = () => {
     let filtered = [...attendanceRecords];
 
     if (searchTerm) {
       filtered = filtered.filter(record =>
-        record.workerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        record.phoneNumber.includes(searchTerm)
+        record.employeeName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        record.employeeId.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
-    if (selectedOrganization !== 'all') {
-      filtered = filtered.filter(record => record.organizationId === selectedOrganization);
-    }
-
     setFilteredRecords(filtered);
-    setCurrentPage(1);
   };
 
   const handleDateChange = (days: number) => {
@@ -112,30 +82,25 @@ export default function Attendance() {
     currentDate.setDate(currentDate.getDate() + days);
     const newDate = currentDate.toISOString().split('T')[0];
     setSelectedDate(newDate);
-
-    if (attendanceRecords.length > 0) {
-      const mockAttendance = generateMockAttendance(
-        attendanceRecords.map(record => ({
-          id: record.workerId,
-          name: record.workerName,
-          phone_number: record.phoneNumber,
-          organization_id: record.organizationId,
-          photograph: record.photograph,
-        } as Worker)),
-        newDate
-      );
-      setAttendanceRecords(mockAttendance);
-    }
+    setCurrentPage(1);
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'present':
-        return <span className="px-3 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Present</span>;
-      case 'absent':
-        return <span className="px-3 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">Absent</span>;
-      case 'half-day':
-        return <span className="px-3 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">Half Day</span>;
+  const getAttendanceTypeBadge = (type: string) => {
+    switch (type) {
+      case 'entry':
+        return (
+          <span className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+            <LogIn className="h-3 w-3 mr-1" />
+            Entry
+          </span>
+        );
+      case 'exit':
+        return (
+          <span className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+            <LogOut className="h-3 w-3 mr-1" />
+            Exit
+          </span>
+        );
       default:
         return <span className="px-3 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">Unknown</span>;
     }
@@ -151,18 +116,71 @@ export default function Attendance() {
     });
   };
 
-  const indexOfLastRecord = currentPage * recordsPerPage;
-  const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
-  const currentRecords = filteredRecords.slice(indexOfFirstRecord, indexOfLastRecord);
-  const totalPages = Math.ceil(filteredRecords.length / recordsPerPage);
+  const formatTime = (timestamp: string) => {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString('en-IN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
+
+  const getSimilarityColor = (score: number) => {
+    if (score >= 0.9) return 'text-green-600';
+    if (score >= 0.8) return 'text-yellow-600';
+    return 'text-red-600';
+  };
+
+  const totalPages = Math.ceil(totalRecords / recordsPerPage);
+
+  const entryCount = attendanceRecords.filter(r => r.attendanceType === 'entry').length;
+  const exitCount = attendanceRecords.filter(r => r.attendanceType === 'exit').length;
 
   return (
     <div className="py-6">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-900">Daily Attendance</h1>
         <p className="mt-2 text-sm text-gray-600">
-          View and track worker attendance records
+          View and track worker attendance records with biometric verification
         </p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Total Records</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">{totalRecords}</p>
+            </div>
+            <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
+              <Calendar className="h-6 w-6 text-blue-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Entries</p>
+              <p className="text-2xl font-bold text-green-600 mt-1">{entryCount}</p>
+            </div>
+            <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
+              <LogIn className="h-6 w-6 text-green-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Exits</p>
+              <p className="text-2xl font-bold text-blue-600 mt-1">{exitCount}</p>
+            </div>
+            <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
+              <LogOut className="h-6 w-6 text-blue-600" />
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
@@ -185,17 +203,7 @@ export default function Attendance() {
                   value={selectedDate}
                   onChange={(e) => {
                     setSelectedDate(e.target.value);
-                    const mockAttendance = generateMockAttendance(
-                      attendanceRecords.map(record => ({
-                        id: record.workerId,
-                        name: record.workerName,
-                        phone_number: record.phoneNumber,
-                        organization_id: record.organizationId,
-                        photograph: record.photograph,
-                      } as Worker)),
-                      e.target.value
-                    );
-                    setAttendanceRecords(mockAttendance);
+                    setCurrentPage(1);
                   }}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
@@ -218,7 +226,7 @@ export default function Attendance() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Name or phone..."
+                placeholder="Name or employee ID..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -226,26 +234,24 @@ export default function Attendance() {
             </div>
           </div>
 
-          {userInfo?.is_jansathi && (
-            <div className="col-span-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <Filter className="inline h-4 w-4 mr-1" />
-                Organization
-              </label>
-              <select
-                value={selectedOrganization}
-                onChange={(e) => setSelectedOrganization(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="all">All Organizations</option>
-                {organizations.map((org) => (
-                  <option key={org.id} value={org.id}>
-                    {org.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
+          <div className="col-span-1">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              <Filter className="inline h-4 w-4 mr-1" />
+              Attendance Type
+            </label>
+            <select
+              value={attendanceTypeFilter}
+              onChange={(e) => {
+                setAttendanceTypeFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="all">All Types</option>
+              <option value="entry">Entry Only</option>
+              <option value="exit">Exit Only</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -254,12 +260,12 @@ export default function Attendance() {
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
           </div>
-        ) : currentRecords.length === 0 ? (
+        ) : filteredRecords.length === 0 ? (
           <div className="text-center py-12">
             <Calendar className="mx-auto h-12 w-12 text-gray-400" />
             <h3 className="mt-2 text-sm font-medium text-gray-900">No attendance records</h3>
             <p className="mt-1 text-sm text-gray-500">
-              {searchTerm || selectedOrganization !== 'all'
+              {searchTerm || attendanceTypeFilter !== 'all'
                 ? 'No records match your filters'
                 : 'No attendance records found for this date'}
             </p>
@@ -271,54 +277,68 @@ export default function Attendance() {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Worker
+                      Employee Name
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Phone Number
+                      Employee ID
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      In Time
+                      Date
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Out Time
+                      Type
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
+                      Time
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Bio Type
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Similarity Score
                     </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {currentRecords.map((record) => (
-                    <tr key={`${record.workerId}-${record.date}`} className="hover:bg-gray-50">
+                  {filteredRecords.map((record) => (
+                    <tr key={record.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-3">
                           <div className="flex-shrink-0">
-                            {record.photograph ? (
-                              <img
-                                src={record.photograph}
-                                alt={record.workerName}
-                                className="h-10 w-10 rounded-full object-cover border-2 border-gray-200"
-                              />
-                            ) : (
-                              <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                                <User className="h-6 w-6 text-gray-500" />
-                              </div>
-                            )}
+                            <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                              <User className="h-6 w-6 text-gray-500" />
+                            </div>
                           </div>
-                          <div className="text-sm font-medium text-gray-900">{record.workerName}</div>
+                          <div className="text-sm font-medium text-gray-900">{record.employeeName}</div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{record.phoneNumber}</div>
+                        <div className="text-sm font-mono text-gray-900">{record.employeeId}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{record.inTime}</div>
+                        <div className="text-sm text-gray-900 flex items-center">
+                          <Calendar className="h-4 w-4 mr-1 text-gray-400" />
+                          {new Date(record.date).toLocaleDateString('en-IN', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric'
+                          })}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{record.outTime}</div>
+                        {getAttendanceTypeBadge(record.attendanceType)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        {getStatusBadge(record.status)}
+                        <div className="text-sm text-gray-900">{formatTime(record.timestamp)}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{record.bioType}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className={`text-sm font-semibold flex items-center ${getSimilarityColor(record.similarityScore)}`}>
+                          <TrendingUp className="h-4 w-4 mr-1" />
+                          {(record.similarityScore * 100).toFixed(2)}%
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -347,9 +367,9 @@ export default function Attendance() {
                 <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                   <div>
                     <p className="text-sm text-gray-700">
-                      Showing <span className="font-medium">{indexOfFirstRecord + 1}</span> to{' '}
-                      <span className="font-medium">{Math.min(indexOfLastRecord, filteredRecords.length)}</span> of{' '}
-                      <span className="font-medium">{filteredRecords.length}</span> results
+                      Showing <span className="font-medium">{(currentPage - 1) * recordsPerPage + 1}</span> to{' '}
+                      <span className="font-medium">{Math.min(currentPage * recordsPerPage, totalRecords)}</span> of{' '}
+                      <span className="font-medium">{totalRecords}</span> results
                     </p>
                   </div>
                   <div>
@@ -361,19 +381,31 @@ export default function Attendance() {
                       >
                         <ChevronLeft className="h-5 w-5" />
                       </button>
-                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                        <button
-                          key={page}
-                          onClick={() => setCurrentPage(page)}
-                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                            currentPage === page
-                              ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                              : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                          }`}
-                        >
-                          {page}
-                        </button>
-                      ))}
+                      {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                        let pageNum;
+                        if (totalPages <= 5) {
+                          pageNum = i + 1;
+                        } else if (currentPage <= 3) {
+                          pageNum = i + 1;
+                        } else if (currentPage >= totalPages - 2) {
+                          pageNum = totalPages - 4 + i;
+                        } else {
+                          pageNum = currentPage - 2 + i;
+                        }
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => setCurrentPage(pageNum)}
+                            className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                              currentPage === pageNum
+                                ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                                : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
                       <button
                         onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                         disabled={currentPage === totalPages}
@@ -388,12 +420,6 @@ export default function Attendance() {
             )}
           </>
         )}
-      </div>
-
-      <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <p className="text-sm text-blue-800">
-          <strong>Note:</strong> Currently showing mock attendance data. Actual attendance API integration is pending.
-        </p>
       </div>
     </div>
   );

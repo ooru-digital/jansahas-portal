@@ -656,6 +656,7 @@ export default function WorkerManagement() {
           }}
           workerName={selectedWorkerForVoucher.name}
           workerId={selectedWorkerForVoucher.id}
+          workerEmail={selectedWorkerForVoucher.email}
         />
       )}
     </>

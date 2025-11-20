@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X, Ticket } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import * as WorkerAPI from '../api/workers';
 
 interface VoucherCategory {
   id: string;
@@ -35,7 +36,7 @@ const voucherCategories: VoucherCategory[] = [
     amount: '₹5,000/month'
   },
   {
-    id: 'skill-dev',
+    id: 'skill_dev',
     name: 'Skill Development Allowance',
     description: 'Training support for workers to upgrade skills (e.g., masonry, electrical, plumbing, machine operation). Helps improve employability and wage potential.',
     amount: '₹5,000/training program'
@@ -65,9 +66,10 @@ interface VoucherModalProps {
   onClose: () => void;
   workerName: string;
   workerId: number;
+  workerEmail?: string;
 }
 
-export default function VoucherModal({ isOpen, onClose, workerName, workerId }: VoucherModalProps) {
+export default function VoucherModal({ isOpen, onClose, workerName, workerId, workerEmail }: VoucherModalProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -84,7 +86,12 @@ export default function VoucherModal({ isOpen, onClose, workerName, workerId }: 
     setIsSubmitting(true);
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const email = workerEmail || 'voucher@workersupport.com';
+
+      await WorkerAPI.sendVoucher(workerId, {
+        category_id: selectedCategory,
+        email: email
+      });
 
       toast.success(`Voucher sent successfully to ${workerName}!`);
       onClose();
