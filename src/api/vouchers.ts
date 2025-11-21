@@ -47,6 +47,7 @@ export interface RefreshVoucherResponse {
   credential_id?: string;
   verification_status?: string;
   updated_status?: 'ISSUED' | 'ISSUANCE_FAILED' | 'REDEEMED' | 'PENDING';
+  redeemed_at?: string | null;
   current_status?: string;
   message?: string;
 }

@@ -140,8 +140,10 @@ export default function Reconciliation() {
     }
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString?: string | null) => {
+    if (!dateString) return '';
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '';
     return date.toLocaleDateString('en-IN', {
       year: 'numeric',
       month: 'short',
@@ -168,7 +170,7 @@ export default function Reconciliation() {
         setDisbursements(prevDisbursements =>
           prevDisbursements.map(disbursement =>
             disbursement.id === voucherId
-              ? { ...disbursement, status: response.updated_status! }
+              ? { ...disbursement, status: response.updated_status!, redeemed_at: formatDate(response.redeemed_at) }
               : disbursement
           )
         );
