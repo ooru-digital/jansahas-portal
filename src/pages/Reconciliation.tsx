@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Ticket, Search, Filter, Calendar, CheckCircle, Clock, User, XCircle, AlertCircle } from 'lucide-react';
+import { Ticket, Search, Filter, Calendar, CheckCircle, Clock, User, XCircle, AlertCircle, RefreshCw } from 'lucide-react';
 import { getOrganizations, Organization } from '../api/organizations';
-import { getVoucherDisbursements, VoucherDisbursement, VoucherSummary } from '../api/vouchers';
+import { getVoucherDisbursements, VoucherDisbursement, VoucherSummary, refreshVoucherStatus } from '../api/vouchers';
 import toast from 'react-hot-toast';
 
 const voucherCategories = [
@@ -25,6 +25,7 @@ export default function Reconciliation() {
     total_redemption_pending: 0
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [refreshingVouchers, setRefreshingVouchers] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -120,14 +121,14 @@ export default function Reconciliation() {
             Issued
           </span>
         );
-      case 'REDEMPTION_PENDING':
+      case 'PENDING':
         return (
           <span className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
             <AlertCircle className="h-3 w-3 mr-1" />
             Pending
           </span>
         );
-      case 'FAILED':
+      case 'ISSUANCE_FAILED':
         return (
           <span className="inline-flex items-center px-3 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
             <XCircle className="h-3 w-3 mr-1" />
@@ -156,10 +157,36 @@ export default function Reconciliation() {
     setCurrentPage(page);
   };
 
+  const handleRefreshStatus = async (voucherId: string) => {
+    setRefreshingVouchers(prev => new Set(prev).add(voucherId));
+    try {
+      const response = await refreshVoucherStatus(voucherId);
+
+      setDisbursements(prevDisbursements =>
+        prevDisbursements.map(disbursement =>
+          disbursement.id === voucherId
+            ? { ...disbursement, status: response.updated_status }
+            : disbursement
+        )
+      );
+
+      toast.success(`Voucher status updated to ${response.updated_status}`);
+    } catch (error) {
+      toast.error('Failed to refresh voucher status');
+      console.error(error);
+    } finally {
+      setRefreshingVouchers(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(voucherId);
+        return newSet;
+      });
+    }
+  };
+
   return (
     <div className="py-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Voucher Reconciliation</h1>
+        <h1 className="text-3xl font-bold text-gray-900">Voucher Disbursement</h1>
         <p className="mt-2 text-sm text-gray-600">
           Track and manage voucher disbursements across all workers
         </p>
@@ -343,6 +370,9 @@ export default function Reconciliation() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -387,6 +417,17 @@ export default function Reconciliation() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       {getStatusBadge(disbursement.status)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <button
+                        onClick={() => handleRefreshStatus(disbursement.id)}
+                        disabled={refreshingVouchers.has(disbursement.id)}
+                        className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Refresh voucher status"
+                      >
+                        <RefreshCw className={`h-4 w-4 mr-1 ${refreshingVouchers.has(disbursement.id) ? 'animate-spin' : ''}`} />
+                        {refreshingVouchers.has(disbursement.id) ? 'Refreshing...' : 'Refresh'}
+                      </button>
                     </td>
                   </tr>
                 ))}

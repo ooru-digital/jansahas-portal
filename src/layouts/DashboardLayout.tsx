@@ -271,7 +271,7 @@ export default function DashboardLayout({ isAuthenticated, onLogout }: Dashboard
       <div className="md:pl-64 flex flex-col flex-1">
         <main className="flex-1">
           <div className="pt-16 md:pt-0">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 pb-16">
+            <div className="max-w-8xl mx-auto px-4 sm:px-6 md:px-8 pb-16">
               <Outlet />
             </div>
           </div>

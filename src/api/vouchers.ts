@@ -12,7 +12,7 @@ export interface VoucherDisbursement {
   worker: VoucherWorker;
   category_id: string;
   category_name: string;
-  status: 'ISSUED' | 'FAILED' | 'REDEEMED' | 'REDEMPTION_PENDING';
+  status: 'ISSUED' | 'ISSUANCE_FAILED' | 'REDEEMED' | 'PENDING';
   amount: string;
   issued_at: string;
   redeemed_at: string | null;
@@ -42,6 +42,13 @@ export interface VoucherQueryParams {
   organization_id?: string;
 }
 
+export interface RefreshVoucherResponse {
+  voucher_id: string;
+  credential_id: string;
+  verification_status: string;
+  updated_status: 'ISSUED' | 'ISSUANCE_FAILED' | 'REDEEMED' | 'PENDING';
+}
+
 export const getVoucherDisbursements = async (params?: VoucherQueryParams): Promise<VoucherDisbursementResponse> => {
   try {
     const queryParams = new URLSearchParams();
@@ -64,5 +71,19 @@ export const getVoucherDisbursements = async (params?: VoucherQueryParams): Prom
       throw new Error(`Failed to fetch voucher disbursements: ${error.message}`);
     }
     throw new Error('Failed to fetch voucher disbursements');
+  }
+};
+
+export const refreshVoucherStatus = async (voucherId: string): Promise<RefreshVoucherResponse> => {
+  try {
+    const endpoint = `/voucher/refresh/${voucherId}`;
+    const response = await api.get<RefreshVoucherResponse>(endpoint);
+
+    return response.data;
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new Error(`Failed to refresh voucher status: ${error.message}`);
+    }
+    throw new Error('Failed to refresh voucher status');
   }
 };
