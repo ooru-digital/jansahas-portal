@@ -44,9 +44,11 @@ export interface VoucherQueryParams {
 
 export interface RefreshVoucherResponse {
   voucher_id: string;
-  credential_id: string;
-  verification_status: string;
-  updated_status: 'ISSUED' | 'ISSUANCE_FAILED' | 'REDEEMED' | 'PENDING';
+  credential_id?: string;
+  verification_status?: string;
+  updated_status?: 'ISSUED' | 'ISSUANCE_FAILED' | 'REDEEMED' | 'PENDING';
+  current_status?: string;
+  message?: string;
 }
 
 export const getVoucherDisbursements = async (params?: VoucherQueryParams): Promise<VoucherDisbursementResponse> => {

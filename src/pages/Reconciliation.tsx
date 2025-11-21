@@ -162,15 +162,19 @@ export default function Reconciliation() {
     try {
       const response = await refreshVoucherStatus(voucherId);
 
-      setDisbursements(prevDisbursements =>
-        prevDisbursements.map(disbursement =>
-          disbursement.id === voucherId
-            ? { ...disbursement, status: response.updated_status }
-            : disbursement
-        )
-      );
+      if (response.message) {
+        toast(response.message);
+      } else if (response.updated_status) {
+        setDisbursements(prevDisbursements =>
+          prevDisbursements.map(disbursement =>
+            disbursement.id === voucherId
+              ? { ...disbursement, status: response.updated_status! }
+              : disbursement
+          )
+        );
 
-      toast.success(`Voucher status updated to ${response.updated_status}`);
+        toast.success(`Voucher status updated to ${response.updated_status}`);
+      }
     } catch (error) {
       toast.error('Failed to refresh voucher status');
       console.error(error);
