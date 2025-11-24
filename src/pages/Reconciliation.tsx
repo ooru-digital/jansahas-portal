@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Ticket, Search, Filter, Calendar, CheckCircle, Clock, User, XCircle, AlertCircle, RefreshCw } from 'lucide-react';
 import { getOrganizations, Organization } from '../api/organizations';
 import { getVoucherDisbursements, VoucherDisbursement, VoucherSummary, refreshVoucherStatus } from '../api/vouchers';
+import RedemptionDetailsModal from '../components/RedemptionDetailsModal';
 import toast from 'react-hot-toast';
 
 const voucherCategories = [
@@ -26,6 +27,8 @@ export default function Reconciliation() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [refreshingVouchers, setRefreshingVouchers] = useState<Set<string>>(new Set());
+  const [selectedDisbursement, setSelectedDisbursement] = useState<VoucherDisbursement | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -153,6 +156,14 @@ export default function Reconciliation() {
     });
   };
 
+  const getDepositedDate = (redeemedDate: string | null) => {
+    if (!redeemedDate) return null;
+    const redeemed = new Date(redeemedDate);
+    if (isNaN(redeemed.getTime())) return null;
+    const deposited = new Date(redeemed.getTime() + 60 * 60 * 1000);
+    return deposited.toISOString();
+  };
+
   const totalPages = Math.ceil(totalCount / itemsPerPage);
 
   const handlePageChange = (page: number) => {
@@ -187,6 +198,18 @@ export default function Reconciliation() {
         return newSet;
       });
     }
+  };
+
+  const handleRowClick = (disbursement: VoucherDisbursement) => {
+    if (disbursement.status === 'REDEEMED') {
+      setSelectedDisbursement(disbursement);
+      setIsModalOpen(true);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedDisbursement(null);
   };
 
   return (
@@ -374,6 +397,9 @@ export default function Reconciliation() {
                     Redeemed Date
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Deposited Date
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -383,7 +409,11 @@ export default function Reconciliation() {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredDisbursements.map((disbursement) => (
-                  <tr key={disbursement.id} className="hover:bg-gray-50">
+                  <tr
+                    key={disbursement.id}
+                    onClick={() => handleRowClick(disbursement)}
+                    className={`hover:bg-gray-50 ${disbursement.status === 'REDEEMED' ? 'cursor-pointer' : ''}`}
+                  >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-3">
                         <div className="flex-shrink-0">
@@ -430,11 +460,26 @@ export default function Reconciliation() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {disbursement.status === 'REDEEMED' && disbursement.redeemed_at ? (
+                          <span className="flex items-center">
+                            <Calendar className="h-4 w-4 mr-1 text-gray-400" />
+                            {formatDate(getDepositedDate(disbursement.redeemed_at))}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
                       {getStatusBadge(disbursement.status)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <button
-                        onClick={() => handleRefreshStatus(disbursement.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRefreshStatus(disbursement.id);
+                        }}
                         disabled={refreshingVouchers.has(disbursement.id)}
                         className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         title="Refresh voucher status"
@@ -487,6 +532,14 @@ export default function Reconciliation() {
             </button>
           </div>
         </div>
+      )}
+
+      {selectedDisbursement && (
+        <RedemptionDetailsModal
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          disbursement={selectedDisbursement}
+        />
       )}
     </div>
   );
