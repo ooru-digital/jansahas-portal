@@ -5,6 +5,7 @@ export interface VoucherWorker {
   name: string;
   email: string | null;
   phone: string;
+  photograph?: string | null;
 }
 
 export interface VoucherDisbursement {

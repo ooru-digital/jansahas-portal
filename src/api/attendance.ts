@@ -11,6 +11,7 @@ export interface AttendanceRecord {
   timestamp: string;
   date: string;
   synced: boolean;
+  photograph?: string | null;
 }
 
 export interface AttendanceResponse {
